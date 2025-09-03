@@ -1,0 +1,43 @@
+# Data generation specific ignores
+
+# Generated data files
+data/*.csv
+data/*.json
+data/*.parquet
+data/*.xlsx
+
+# Environment files
+.env
+.env.local
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter Notebook checkpoints
+notebooks/.ipynb_checkpoints/
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Keep data directory structure but ignore contents
+!data/.gitkeep
+!data/README.md

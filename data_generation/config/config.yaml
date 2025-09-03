@@ -1,0 +1,36 @@
+# Data Generation Configuration
+
+# Database settings
+database:
+  name: "SUMMIT_SPORTS_DB"
+  schema: "BRONZE"
+  warehouse: "COMPUTE_WH"
+
+# Data generation settings
+generation:
+  # Number of records to generate for different entities
+  customers: 10000
+  products: 500
+  orders: 50000
+  reviews: 25000
+  
+  # Date ranges for historical data
+  start_date: "2020-01-01"
+  end_date: "2024-12-31"
+  
+  # Seed for reproducible data generation
+  random_seed: 42
+
+# Output settings
+output:
+  format: "csv"  # csv, json, parquet
+  include_headers: true
+  chunk_size: 1000
+
+# Snowflake connection (use environment variables)
+snowflake:
+  account: "${SNOWFLAKE_ACCOUNT}"
+  user: "${SNOWFLAKE_USER}"
+  password: "${SNOWFLAKE_PASSWORD}"
+  role: "${SNOWFLAKE_ROLE}"
+  warehouse: "${SNOWFLAKE_WAREHOUSE}"
