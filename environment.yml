@@ -1,0 +1,9 @@
+name: summit_sports_analytics
+channels:
+  - snowflake
+  - nodefaults
+dependencies:
+  - streamlit
+  - pandas
+  - plotly
+  - snowflake-snowpark-python 

@@ -1,0 +1,1275 @@
+# Snowflake Custom Demo Generation Rules
+# EMEA Sales Engineering Playbook Implementation
+# Version: 1.0 | Authors: Alex Ross & Duncan Beeby
+
+## Mission Statement
+# Intensify Snowflake Adoption & Streamline the Tech Win through automated, industry-specific demo generation
+
+## Core Principles
+# 1. Follow gold standard project structure religiously
+# 2. Ensure every demo meets technical and business quality gates
+# 3. Generate industry-specific, ROI-focused demonstrations
+# 4. Implement multi-workload Snowflake capabilities
+# 5. Create production-ready, scalable solutions
+# 6. **NEVER GIVE UP ON DATA LOADING** - All Bronze layer data MUST load successfully
+
+## Project Structure Standard
+# Always create demos with this exact directory structure:
+# /root
+# ├── PRD.md (Product Requirements Document - MUST BE CREATED FIRST)
+# ├── README.md (Executive summary and quick start)
+# ├── {industry}_quickstart.md (Step-by-step implementation guide)
+# ├── requirements.txt (Python dependencies)
+# ├── environment.yml (Conda environment specification)
+# ├── .gitignore (Version control exclusions)
+# ├── data/ (Sample datasets and generators)
+# │   ├── generator/ (Industry-specific data generator)
+# │   └── samples/ (100, 1000, 10000 record datasets)
+# ├── streamlit/ (Interactive application)
+# │   ├── src/ (Main application components)
+# │   └── cortex_analyst/ (Semantic model configuration)
+# ├── snowflake_sql/ (Raw SQL implementations)
+# ├── notebooks/ (Snowflake notebooks - alternative to DBT)
+# │   ├── 01_*.ipynb (Bronze → Silver processing)
+# │   ├── 02_*.ipynb (Data quality and enrichment)
+# │   ├── 03_*.ipynb (Silver → Gold metrics)
+# │   └── 04_*.ipynb (Validation and testing)
+# ├── setup/ (Data loading and setup options)
+# │   ├── python/ (Python-based loading scripts)
+# │   ├── snowsql/ (SnowSQL-based loading scripts)
+# │   └── docs/ (Setup documentation)
+# ├── img/ (Screenshots and diagrams)
+# └── docs/ (Comprehensive documentation)
+#
+# CRITICAL FILE ORGANIZATION RULES:
+# 1. The current working directory IS the ROOT folder (workspace root = demo root)
+# 2. ALL demo files MUST be created within the ROOT folder
+# 3. Each demo workspace is completely self-contained and independent
+# 4. Workspace root contains: .cursorrules, .gitignore, .venv, data_generation_rules.md plus all demo files
+# 5. Demo files are organized in subdirectories: data/, streamlit/, snowflake_sql/, notebooks/, setup/, docs/, img/
+# 6. When working on a demo, all files belong to the single demo in this workspace 
+
+## Snowflake Setup Standards
+# CRITICAL SNOWFLAKE OBJECT CREATION RULES:
+# 1. **Stage Creation**: ALWAYS create stages in BRONZE schema, never in GOLD or SILVER
+#    - Stages are for raw data ingestion, belong with Bronze layer
+#    - Use: CREATE STAGE bronze_schema.stage_name
+#    - Reason: Stages handle raw data loading, align with Bronze layer purpose
+# 2. **File Format Creation**: Create file formats in same schema as stage (BRONZE)
+#    - JSON formats for semi-structured data (replacing NoSQL/Firestore)
+#    - CSV formats for structured system exports
+#    - Use descriptive names: json_format, csv_format
+# 3. **Cross-Schema References**: Use fully qualified names when referencing across schemas
+#    - Stage reference: @database.schema.stage_name/path/
+#    - File format reference: FILE_FORMAT = (FORMAT_NAME = 'database.schema.format_name')
+# 4. **Schema Context**: Always set proper schema context before operations
+#    - USE SCHEMA BRONZE; before stage operations
+#    - USE SCHEMA BRONZE; before loading operations
+#    - Verify with SHOW STAGES; after creation
+
+## Load Script Creation Process
+# MANDATORY LOAD SCRIPT STRUCTURE:
+# 1. **setup_database_objects.sql**: Database structure creation
+#    - Creates database, all schemas (BRONZE, SILVER, GOLD)
+#    - Creates file formats in BRONZE schema
+#    - Creates stage in BRONZE schema
+#    - Creates all tables with proper data types
+#    - Sets up sequences and permissions
+#    - Includes validation queries
+# 2. **load_data_to_stage.sql**: File upload to stage
+#    - Sets proper schema context (USE SCHEMA BRONZE)
+#    - Clears existing stage files (REMOVE @stage_name)
+#    - Uploads all dataset sizes (100, 1000, 10000)
+#    - Organizes files by type and size in stage directories
+#    - Includes verification (LIST @stage_name)
+# 3. **load_bronze_data.sql**: Data loading from stage to tables
+#    - Sets proper schema context and dataset size variable
+#    - Truncates existing tables for fresh loads
+#    - Uses fully qualified stage references
+#    - Includes proper error handling (ON_ERROR clauses)
+#    - Validates data loads with sample queries
+# 4. **setup_complete.sql**: One-command complete setup
+#    - Combines all three scripts in proper sequence
+#    - Includes comprehensive validation
+#    - Provides sample data previews
+#    - Shows next steps for workshop/demo
+
+## Load Script Error Prevention
+# CRITICAL ERROR PREVENTION RULES:
+# 1. **Stage Location**: Create stages in BRONZE schema only
+#    - Wrong: CREATE STAGE my_stage (creates in current schema)
+#    - Right: USE SCHEMA BRONZE; CREATE STAGE my_stage
+# 2. **File Format Location**: Create file formats in same schema as stage
+#    - Wrong: File formats in different schema than stage
+#    - Right: Both stage and file formats in BRONZE schema
+# 3. **Cross-Schema References**: Use fully qualified names
+#    - Wrong: @stage_name/path/ (assumes current schema)
+#    - Right: @database.schema.stage_name/path/
+# 4. **Schema Context**: Always set context before operations
+#    - Start each script with USE DATABASE and USE SCHEMA
+#    - Verify context with SHOW STAGES; after creation
+# 5. **Validation**: Include validation queries in every script
+#    - Table counts, sample data, successful load confirmation
+#    - Error checking with proper error messages
+
+## CRITICAL DATA LOADING RULES - NEVER GIVE UP
+# **MANDATORY DATA LOADING SUCCESS CRITERIA:**
+# 1. **ALL Bronze layer tables MUST load successfully** - No exceptions, no compromises
+# 2. **When data loading fails**: Debug the root cause and fix it immediately
+# 3. **Common fixes**: Adjust data types, examine actual data, fix file formats, handle nulls
+# 4. **Data quality issues**: Only create intentionally in generator when specifically requested for demos
+# 5. **Default behavior**: Clean, complete data loading across all tables and all source systems
+# 6. **SCHEMA VALIDATION MANDATORY**: Target table schemas MUST match PRD.md documentation
+#    - Verify column names in CREATE TABLE statements against PRD Bronze layer schemas
+#    - Validate data types alignment between generated data and table definitions
+#    - Update PRD.md if actual schemas differ from documentation
+#    - Include validation queries to confirm schema accuracy post-deployment
+# 7. **Error debugging process**:
+#    - Examine the actual data causing errors (SELECT from stage)
+#    - Identify root cause (wrong data type, malformed data, etc.)
+#    - Fix data generation OR adjust table schema OR use data transformation
+#    - **Validate schema changes against PRD documentation**
+#    - Re-run until 100% successful load
+# 8. **Success metrics**: Every COPY INTO must show LOADED status with 0 errors
+# 9. **Schema accuracy metrics**: All deployed tables must match PRD documented schemas
+# 10. **No tolerance for load failures**: Keep iterating until all data loads successfully
+
+## Technical Quality Gates (All Must Pass)
+# - Data Pipeline: All code must run successfully
+# - Performance: Queries execute in <30 seconds for demo datasets
+# - Error Handling: Graceful degradation for all failure scenarios
+# - Security: No hardcoded credentials or sensitive data exposure
+# - **DATA LOADING**: 100% successful load rate for all Bronze layer tables
+# - **SCHEMA VALIDATION**: 100% alignment between deployed schemas and PRD.md documentation
+
+## Business Value Gates (All Must Pass)
+# - ROI Quantification: Clear financial impact calculations included
+# - Industry Relevance: Use cases directly address vertical-specific challenges
+# - Scalability Demo: Shows growth from pilot to enterprise deployment
+# - Competitive Differentiation: Highlights unique Snowflake capabilities
+# - Multi-Workload: Demonstrates at least 3 different Snowflake workloads
+
+## User Experience Gates (All Must Pass)
+# - Intuitive Navigation: Non-technical users can understand the demo
+# - Visual Appeal: Modern, professional UI following Snowflake design guidelines
+# - Mobile Responsive: Apps functional on tablets and mobile devices
+
+## Demo Types and Delivery Models
+# Snowflake demos should be designed for one of two primary delivery models:
+#
+# ### Hands-On-Labs (HOL)
+# - **Purpose**: Customer-led learning experience with Snowflake onsite participation
+# - **Data Setup**: Only BRONZE layer data loaded in environment setup
+# - **Deliverables**: 
+#   - Notebooks with step-by-step instructions
+#   - SQL worksheets for guided execution
+#   - Separate scripts for SILVER and GOLD layers (not run in setup)
+#   - Educational content focusing on "how to build"
+# - **Experience**: Interactive, educational, customer-driven
+# - **Duration**: Typically 2-4 hours with breaks
+# - **Audience**: Technical users, data engineers, analysts
+# - **Success Metric**: Learning outcomes and hands-on skill development
+#
+# ### Full Demo
+# - **Purpose**: Complete solution demonstration by SE to showcase capabilities
+# - **Data Setup**: All layers (BRONZE, SILVER, GOLD) fully loaded and operational
+# - **Deliverables**:
+#   - Complete Streamlit applications
+#   - Pre-built notebooks with executed results
+#   - End-to-end data pipeline demonstration
+#   - Business-focused dashboards and analytics
+# - **Experience**: Presentation-style, SE-led, outcome-focused
+# - **Duration**: Typically 30-60 minutes
+# - **Audience**: Business stakeholders, executives, decision makers
+# - **Success Metric**: Business value demonstration and deal progression
+
+## Required Snowflake Workloads (Include at least 3)
+# - Data Warehousing (Core performance and scalability)
+# - Data Engineering (Snowpark, Dynamic Tables, Tasks & Streams)
+# - AI/ML (Cortex AI Functions, Snowpark ML, Container Services)
+# - Data Sharing (Secure Data Sharing, Marketplace, Native Apps)
+# - Application Development (Streamlit, Native App Framework)
+
+## Environment Setup Automation
+# When user requests environment setup, automatically:
+# 1. Create Python virtual environment (.venv)
+# 2. Activate the virtual environment
+# 3. Create requirements.txt with standard Snowflake demo dependencies
+# 4. Install all packages from requirements.txt
+# 5. Verify installation success
+
+## Code Generation Rules
+
+### Critical Column Validation Rule
+# **MANDATORY SCHEMA VALIDATION USING PRD DOCUMENTATION**:
+# Before generating ANY notebook, DBT model, or Streamlit app code that references database columns:
+# 1. **ALWAYS check PRD.md for documented column schemas** - the PRD is the single source of truth
+# 2. **Reference the "Data Layout & Structure" section** for complete Silver and Gold layer schemas
+# 3. **Cross-reference all column names** against PRD documented schemas before generating code
+# 4. **For Bronze layer**: Use the table creation scripts in setup/ folder as reference
+# 5. **For JSON columns**: Validate JSON path expressions against PRD structure documentation
+# 6. **Never assume column names** - always verify against PRD documentation
+# 7. **If PRD is incomplete**: Update PRD with actual schema before generating code
+# 8. **This applies to**:
+#    - SQL cells in notebooks referencing table columns
+#    - DBT models with source table column references
+#    - Streamlit apps querying Snowflake tables
+#    - Any SQL code generation that uses SELECT, WHERE, GROUP BY, ORDER BY
+# 9. **Required validation process**:
+#    ```
+#    Step 1: Open PRD.md and locate relevant schema documentation
+#    Step 2: Cross-reference all column names in generated code against PRD schemas
+#    Step 3: Verify JSON path expressions match documented structure
+#    Step 4: If schema is missing in PRD, research actual schema and update PRD first
+#    Step 5: Generate code only after 100% column validation against PRD
+#    Step 6: Include schema validation comments in generated code
+#    ```
+# 10. **For JSON columns**: Check PRD for documented JSON structure and validate paths
+# 11. **PRD Schema Sections to Reference**:
+#     - Bronze layer table structures (from setup scripts)
+#     - Silver layer view schemas (complete column lists)
+#     - Gold layer view schemas (analytics-ready columns)
+#     - JSON document structure for path validation
+# 
+# **PRD UPDATE REQUIREMENT**:
+# When creating any new table/view/schema transformation:
+# - **BEFORE coding**: Document the target schema in PRD.md Data Layout & Structure section
+# - **AFTER successful deployment**: Verify PRD matches deployed reality
+# - **Include**: Complete column lists, data types, business logic applied
+# - **Document**: Transformations, joins, and calculated fields
+
+### Schema Documentation Rule
+# **MANDATORY PRD SCHEMA DOCUMENTATION**:
+# When creating notebooks, scripts, DBT models, or any data engineering artifacts that define Silver and Gold layer schemas:
+# 1. **ALWAYS document target schemas in PRD.md** before generating code
+# 2. **Update PRD Data Layout & Structure section** with actual view/table definitions
+# 3. **Include complete column lists** for all Silver and Gold layer objects
+# 4. **Document business logic transformations** applied in each layer
+# 5. **Specify data types and constraints** for critical business fields
+# 6. **This applies to**:
+#    - Snowflake notebooks creating Silver/Gold views
+#    - DBT models defining schema transformations
+#    - SQL scripts creating analytics views
+#    - Streamlit apps that define derived schemas
+#    - Any code that creates new database objects
+# 7. **PRD Update Process**:
+#    ```
+#    Step 1: Before coding, define target schema in PRD
+#    Step 2: Generate code based on PRD specifications
+#    Step 3: After successful deployment, update PRD with actual schemas
+#    Step 4: Validate PRD matches deployed reality
+#    ```
+# 8. **Benefits of Schema Documentation**:
+#    - Ensures consistency across development artifacts
+#    - Enables accurate Cortex Analyst semantic models
+#    - Facilitates code review and maintenance
+#    - Supports demo customization and extension
+# 9. **Required PRD Sections**:
+#    - Silver Layer Views: Complete column definitions with business logic
+#    - Gold Layer Views: Analytics-ready schemas with pre-computed metrics
+#    - Data Lineage: Clear Bronze → Silver → Gold transformation flow
+#    - Business Rules: Categorizations, calculations, and enrichments applied
+
+### Behavioral Learning Rules
+# **CRITICAL MISTAKES TO AVOID** - Lessons from Les Furets Demo Development:
+# These rules document specific behavioral patterns that lead to errors and must be avoided:
+
+# **1. STREAMLIT CHARTING COMPLIANCE VIOLATION**
+# MISTAKE: Generated notebooks with fig.show() instead of st.plotly_chart()
+# LESSON: When updating notebooks for Streamlit compatibility, ALWAYS search and replace ALL chart display methods
+# SOLUTION: Before finalizing any notebook:
+#   - Search for: fig.show(), chart.show(), plt.show()
+#   - Replace with: st.plotly_chart(fig), st.altair_chart(chart), st.pyplot(fig)
+#   - Verify all visualization code uses Streamlit functions
+#   - Test that all imports include Streamlit: import streamlit as st
+
+# **2. COLUMN NAME ASSUMPTION ERRORS**
+# MISTAKE: Used `WHERE actif = TRUE` when column was actually `statut = 'actif'`
+# LESSON: NEVER assume database column names, even for common patterns
+# SOLUTION: ALWAYS validate against PRD.md Data Layout & Structure section before writing ANY WHERE clause
+#   - Check exact column names: actif vs statut vs active vs is_active
+#   - Verify data types: boolean vs string vs integer
+#   - Reference PRD documented schemas before generating final code
+
+# **3. NON-EXISTENT COLUMN DEPENDENCIES**
+# MISTAKE: Built analytics around columns that don't exist in target tables
+# LESSON: Verify ALL column dependencies before designing analytics logic
+# SOLUTION: Map complete table schema using PRD documentation before designing any analysis:
+#   - List ALL available columns in each table from PRD schemas
+#   - Identify what analytics are actually possible with documented data
+#   - Don't design around assumed/missing columns
+
+# **4. DATA UNIT MISINTERPRETATION**
+# MISTAKE: Treated `temps_passe_secondes` values (30, 98, 123) as if they were minutes
+# LESSON: Always examine actual data values to understand units and ranges
+# SOLUTION: Before setting thresholds or comparisons:
+#   - Sample actual data values: SELECT DISTINCT column_name FROM table LIMIT 10
+#   - Understand value ranges and distributions
+#   - Verify units match variable names (seconds vs minutes vs hours)
+
+# **5. INCOMPLETE CODE UPDATES**
+# MISTAKE: Added new rules (Streamlit charting) but failed to apply them to existing notebooks
+# LESSON: When adding new standards, ALWAYS audit and update existing code for compliance
+# SOLUTION: After adding new rules:
+#   - Review ALL existing files for compliance
+#   - Update non-compliant code immediately
+#   - Test all updated files work correctly
+
+# **6. DATA GENERATION OVERSIGHT**
+# MISTAKE: Generated uniform data distribution instead of realistic market differentiation
+# LESSON: Business logic must reflect realistic market conditions and competitive positioning
+# SOLUTION: For data generation:
+#   - Research actual market conditions (price ranges, competitor positioning)
+#   - Implement realistic variation and business logic
+#   - Validate generated data matches expected patterns
+
+# **PREVENTION WORKFLOW**:
+# Before generating ANY code (SQL, Python, notebooks, Streamlit):
+# 1. **Schema Validation**: Check PRD.md Data Layout & Structure section for ALL referenced tables
+# 2. **Data Sampling**: SELECT sample data to understand values, units, ranges
+# 3. **Column Cross-Reference**: Verify ALL column names used in code exist in PRD documentation
+# 4. **Standards Compliance**: Check code follows ALL cursor rules (Streamlit, Snowflake SQL, etc.)
+# 5. **Business Logic Validation**: Ensure generated logic reflects realistic business scenarios
+# 6. **End-to-End Testing**: Test complete workflows before declaring completion
+
+# **VIOLATION CONSEQUENCES**:
+# - Runtime errors during demo execution
+# - Failed data loading and transformations
+# - Broken Streamlit applications
+# - Inaccurate business analytics
+# - Loss of demo credibility and technical win
+
+# **SUCCESS CRITERIA**:
+# - 100% schema validation before code generation
+# - All visualizations use Streamlit-compatible functions
+# - All SQL uses existing columns with correct data types
+# - All analytics reflect realistic business scenarios
+# - All code executes successfully without manual fixes
+
+### Snowflake SQL Compatibility Rule
+# **MANDATORY SNOWFLAKE SQL SYNTAX**:
+# Always use Snowflake-specific SQL syntax and functions, not standard SQL features that aren't supported:
+# 1. **FILTER clause NOT supported**: Do not use `COUNT(*) FILTER (WHERE condition)` syntax
+# 2. **Use COUNT_IF instead**: Replace FILTER with Snowflake's COUNT_IF function
+#    - Wrong: `COUNT(*) FILTER (WHERE status = 'active')`
+#    - Right: `COUNT_IF(status = 'active')`
+# 3. **Alternative CASE approach**: For other aggregates, use CASE statements
+#    - Wrong: `SUM(amount) FILTER (WHERE status = 'completed')`
+#    - Right: `SUM(CASE WHEN status = 'completed' THEN amount END)`
+# 4. **Other Snowflake alternatives**:
+#    - Use Snowflake's date/time functions (not standard SQL equivalents)
+#    - Use Snowflake's JSON functions for semi-structured data
+#    - Use Snowflake's window function syntax and limitations
+# 5. **Validation**: Test all SQL in Snowflake context, not generic SQL standards
+# 6. **Reference documentation**: Always refer to Snowflake SQL documentation for syntax validation
+
+### Snowflake PUT Command Path Requirements
+# **MANDATORY FULL PATH USAGE**:
+# Always use full absolute paths in PUT commands to prevent file not found errors:
+# 1. **Wrong**: `PUT file://data/samples_100/file.csv @stage`
+# 2. **Right**: `PUT file:///full/absolute/path/to/data/samples_100/file.csv @stage`
+# 3. **Path Construction**: Use workspace root as base for all file paths
+# 4. **Verification**: Always test PUT commands work from any working directory
+# 5. **Why Full Paths**: Relative paths depend on SnowSQL execution directory
+# 6. **Path Format**: Use `file://` prefix with absolute Unix-style paths
+# 7. **Cross-Platform**: Full paths work consistently across Windows/Mac/Linux
+# 8. **Error Prevention**: Eliminates "File doesn't exist" errors in deployment scripts
+# 9. **Documentation**: Always comment the expected absolute path in scripts
+# 10. **Validation**: Test file existence before creating PUT commands
+
+### Snowflake COPY INTO Size-Specific Data Loading
+# **SIZE-SPECIFIC DATASET LOADING**:
+# Create separate loading scripts for each dataset size due to stage path complexity:
+# 1. **File Structure**: Create load_bronze_data_100.sql, load_bronze_data_1000.sql, load_bronze_data_10000.sql
+# 2. **Stage Path Structure**: Each dataset size stored in its own subfolder:
+#    - table_type/100/ (contains table_type_100.csv.gz)
+#    - table_type/1000/ (contains table_type_1000.csv.gz)
+#    - table_type/10000/ (contains table_type_10000.csv.gz)
+# 3. **CRITICAL STAGE PATH FORMAT**: Use @STAGE_NAME/table_type/size/ (NO double stage name)
+#    - **CORRECT**: `FROM @DEMO_STAGE/table_type/100/`
+#    - **WRONG**: `FROM @DEMO_STAGE/demo_stage/table_type/100/`
+# 4. **Benefits**: Clear separation, no dynamic variable complexity, explicit paths
+# 5. **JSON Special Case**: Handle both single files and part files for large datasets
+#    - Small datasets: @stage/sessions/100/ (single sessions_100.json.gz)
+#    - Large datasets: @stage/sessions/10000/ (multiple sessions_10000_part*.json.gz files)
+# 6. **Column Mapping**: Use explicit SELECT with $1::TYPE casting for type safety
+# 7. **Error Handling**: Always use `ON_ERROR = 'CONTINUE'` to prevent partial loads from failing
+# 8. **Validation**: Include record counts and sample data queries after loading
+# 9. **File Organization**: Stage mirrors data/ folder structure for consistency
+
+### Snowflake Stage Path Consistency Rule
+# **MANDATORY PATH CONSISTENCY VALIDATION**:
+# Ensure stage upload paths in load_data_to_stage.sql exactly match COPY FROM paths in load_bronze_data_*.sql:
+# 1. **Upload Path Format**: `PUT file://path @stage_name/table_type/size/`
+# 2. **Loading Path Format**: `FROM @STAGE_NAME/table_type/size/`
+# 3. **CRITICAL CONSISTENCY CHECK**: Before deploying any demo, validate path mapping:
+#    - **Upload script says**: `@demo_stage/table_type/100/`
+#    - **Loading script must say**: `@DEMO_STAGE/table_type/100/`
+#    - **NOT**: `@DEMO_STAGE/full_table_name/100/` (table name ≠ directory name)
+# 4. **Path Mapping Rules**:
+#    - customers_100.csv → @stage/customers/100/
+#    - orders_100.csv → @stage/orders/100/ (shortened directory name if needed)
+#    - products_100.csv → @stage/products/100/
+#    - sessions_100.json → @stage/sessions/100/
+# 5. **Validation Process**: Before creating loading scripts:
+#    - Review load_data_to_stage.sql PUT commands for actual upload paths
+#    - Cross-reference with stage directory structure using LIST @stage commands
+#    - Ensure COPY FROM paths exactly match confirmed stage locations
+# 6. **Common Error Pattern**: File name includes full table name but stage directory uses shortened name
+# 7. **Testing**: Always run LIST @stage commands to verify files are at expected paths
+# 8. **Documentation**: Comment both upload and loading scripts with path mappings for clarity
+
+### Python Dependencies
+# Always include these minimum versions:
+# - Python 3.9+
+# - streamlit >= 1.28.0
+# - snowflake-connector-python >= 3.4.0
+# - pandas >= 1.5.0
+# - plotly >= 5.0.0
+# - numpy >= 1.21.0
+# - altair >= 4.2.0
+# - python-dotenv >= 0.19.0
+# - requests >= 2.28.0
+# 
+# **STREAMLIT CHART IMPORTS**:
+# When creating Streamlit apps with charts, always import:
+# ```python
+# import streamlit as st
+# import plotly.express as px
+# import plotly.graph_objects as go
+# # Then use: st.plotly_chart(fig) instead of fig.show()
+# ```
+
+### Streamlit Applications
+# - Create modular, component-based architecture
+# - Implement proper error handling and user feedback
+# - Use Snowflake design system colors and styling
+# - Include data caching for performance
+# - Add export functionality for presentations
+# - Ensure mobile responsiveness
+# 
+# **STREAMLIT CHART DISPLAY RULES**:
+# - **Always use Streamlit chart functions** instead of native chart display methods
+# - **For Plotly charts**: Use `st.plotly_chart(fig)` instead of `fig.show()`
+# - **For other chart libraries**: Use appropriate Streamlit equivalents:
+#   - `st.pyplot(fig)` for matplotlib
+#   - `st.altair_chart(chart)` for Altair
+#   - `st.bokeh_chart(chart)` for Bokeh
+# - **Rationale**: Native chart display methods (like `fig.show()`) don't work in Streamlit context
+# - **Chart sizing**: Use Streamlit's `use_container_width=True` parameter for responsive charts
+
+### SQL Code Standards
+# - Use proper SQL formatting and indentation
+# - Include comprehensive comments explaining business logic
+# - Implement data quality checks and validation
+# - Use parameterized queries for security
+# - Include performance optimization hints
+
+### Medallion Architecture Standards
+# - ALWAYS implement medallion architecture (Bronze, Silver, Gold) using views only
+# - Create layered data transformation pipeline with progressive data refinement
+# - Use separate schemas for each layer: BRONZE, SILVER, GOLD
+# - Bronze Layer: Raw data ingestion views with minimal transformation (BRONZE schema)
+# - Silver Layer: Cleaned, validated, and standardized data views (SILVER schema)
+# - Gold Layer: Business-ready analytics views with pre-computed joins and aggregations (GOLD schema)
+# - Front-load complex joins into Gold layer analytics views for optimal performance
+# - Implement business logic using CASE WHEN statements in Silver/Gold layers
+# - Include data lineage documentation showing Bronze → Silver → Gold transformation flow
+# - Add data quality checks at each layer boundary
+# - Implement incremental refresh patterns where applicable
+# - AVOID dynamic tables for Silver and Gold layers unless explicitly required - use regular views instead
+# - AVOID search optimization features unless explicitly required for demo performance
+# - AVOID custom clustering unless explicitly required to showcase clustering capabilities
+# - AVOID stored procedures unless absolutely necessary - use views instead for business logic
+# - Keep demo architecture simple and focused on core Snowflake capabilities
+
+### Data Generation
+# - ALWAYS consult data_generation_rules.md in workspace root for comprehensive guidance
+# - Create realistic, industry-specific synthetic data following established patterns
+# - Avoid uniform distribution skew - implement business logic and natural correlations
+# - Provide multiple dataset sizes (100, 1000, 10000 records)
+# - Include data quality issues to demonstrate Snowflake's capabilities
+# - Generate data that showcases AI/ML use cases
+# - Ensure GDPR/privacy compliance for synthetic data
+# - Follow the three-tier framework: Foundation Data, Industry Transformation, AI Enhancement
+
+# **MANDATORY SCHEMA VALIDATION FOR DATA GENERATION:**
+# Before generating ANY demo data files:
+# 1. **Check PRD.md for Bronze layer table schemas** - Reference setup/snowsql/setup_database_objects.sql structure
+# 2. **Validate column names and data types** against documented Bronze layer specifications
+# 3. **Cross-reference JSON structure** for semi-structured data against PRD documentation
+# 4. **Verify CSV file headers** match exact column names in Bronze table definitions
+# 5. **If generated schema differs from PRD**: UPDATE PRD.md Data Layout & Structure section first
+# 6. **Include schema validation comments** in data generation scripts
+
+# **DATA GENERATION VALIDATION PROCESS:**
+# ```python
+# # VALIDATED: Column structure matches PRD Bronze layer documentation
+# # VERIFIED: customers.csv headers align with BRONZE.CUSTOMERS table
+# # TESTED: JSON structure matches PRD documented specification
+# customers_df = pd.DataFrame({
+#     'customer_id': [...],     # VARCHAR(50) per PRD
+#     'customer_name': [...],   # STRING per PRD  
+#     'status': [...],          # VARCHAR(30) per PRD - verify data type
+#     'email': [...],           # STRING per PRD
+#     'signup_date': [...]      # DATE per PRD
+# })
+# ```
+
+# **SCHEMA MISMATCH RESOLUTION:**
+# When data generation creates different schema than PRD documented:
+# - STOP generation process immediately
+# - Document the new/changed schema requirements in PRD.md
+# - Update Bronze layer table definitions if needed
+# - Include rationale for schema changes in PRD
+# - Resume data generation only after PRD alignment confirmed
+
+### Documentation Standards
+# - Executive summary with business impact
+# - Technical architecture diagrams
+# - Step-by-step deployment guide
+# - ROI calculation methodology
+# - Troubleshooting guide
+
+### 📚 **REFERENCE DOCUMENTATION REQUIREMENTS**
+
+#### **Every Demo MUST Include:**
+# 1. **Data Schema Documentation**: Complete table structure with column descriptions
+# 2. **Business Logic Mapping**: How real-world processes map to database tables
+# 3. **Sample Query Library**: Validated queries for common analytical patterns
+# 4. **Error Pattern Guide**: Known data quirks and how to handle them
+
+#### **Validation Comments in Code:**
+# ```sql
+# -- VALIDATED: Column 'status' confirmed in customers table
+# -- VERIFIED: Sample data shows session_duration range 10-300 seconds (page-level)
+# -- TESTED: Join between orders and customers on customer_id
+# ```
+
+### 🔄 **CONTINUOUS IMPROVEMENT PROCESS**
+
+#### **After Every Demo Development:**
+# 1. Document specific data structure discoveries
+# 2. Update PRD with lessons learned
+# 3. Add new validation patterns to cursor rules
+# 4. Create reference examples for common pitfalls
+# 5. Share learnings with broader SE team
+
+#### **Quality Gate Enforcement:**
+# - **NO notebook deployment** without complete schema validation
+# - **NO SQL generation** without documentation verification  
+# - **NO analytics logic** without business process validation
+# - **NO assumptions** without data-driven proof
+
+### Setup Documentation Standards
+# When creating setup documentation (README files, quickstart guides):
+# - Use COMMAND-FOCUSED approach, not detailed SQL explanations
+# - Format as simple, actionable commands with brief descriptions
+# - Example format:
+#   ```bash
+#   snowsql -f snowflake_sql/setup_demo.sql
+#   ```
+#   **What it does:** Creates database, schema, tables, views, and stored procedures
+#   
+#   ```bash
+#   snowsql -f setup/snowsql/load_data_snowsql.sql
+#   ```
+#   **What it does:** Loads all CSV files into Snowflake tables and validates data
+#
+# - Provide step-by-step commands that users can copy-paste
+# - Include expected results (row counts, validation outputs)
+# - Show both individual commands and combined sequences
+# - Focus on WHAT each command accomplishes, not HOW it works internally
+# - Make setup documentation scannable and executable
+# - Avoid lengthy SQL code blocks in setup instructions
+
+## Snowflake Notebooks Creation and Deployment
+# Use Snowflake Notebooks as an alternative to DBT when DBT is not available
+# Notebooks provide interactive data engineering pipeline development
+#
+# **IMPORTANT**: Specific notebook requirements (names, content, business logic) should be defined in PRD.md
+# This section contains TECHNICAL implementation guidance applicable to any demo
+
+### When to Create Notebooks:
+# - **Hands-On-Labs (HOL)**: When DBT is not available or not preferred
+# - **Educational Demos**: Interactive step-by-step data transformation
+# - **Data Exploration**: When participants need to understand data pipeline logic
+# - **Alternative to DBT**: When customer prefers notebook-based workflows
+# - **Silver Layer Processing**: Focus on Bronze → Silver → Gold transformations
+
+### Notebook Creation Rules:
+# 1. **Directory Structure**: Create notebooks/ folder in workspace root
+# 2. **File Organization**: 
+#    - notebooks/01_*.ipynb (Bronze layer processing - customize based on data sources)
+#    - notebooks/02_*.ipynb (Silver layer enrichment and quality)
+#    - notebooks/03_*.ipynb (Gold layer analytics and metrics)
+#    - notebooks/04_*.ipynb (Data validation and testing)
+# 3. **Naming Convention**: Use numeric prefixes for execution order
+# 4. **File Format**: Standard Jupyter notebook format (.ipynb)
+# 5. **Language Support**: Mix of SQL and Python cells
+
+### Notebook Content Standards:
+# **Cell Types and Structure:**
+# - **Markdown Cells**: Clear explanations, business context, step objectives
+# - **SQL Cells**: Database operations, data transformations, validation queries
+#   **CRITICAL SQL CELL METADATA**: SQL cells MUST include "language": "sql" in metadata
+#   ```json
+#   {
+#    "cell_type": "code",
+#    "metadata": {"language": "sql"},
+#    "source": ["-- SQL code here"]
+#   }
+#   ```
+# - **Python Cells**: Data processing, visualization, session management
+#   **CRITICAL PYTHON CELL METADATA**: Python cells use standard code cell metadata
+#   ```json
+#   {
+#    "cell_type": "code", 
+#    "metadata": {},
+#    "source": ["# Python code here"]
+#   }
+#   ```
+# - **Mixed Usage**: Combine SQL and Python for comprehensive data engineering
+
+# **Required Content in Each Notebook:**
+# - **Introduction**: Purpose, objectives, expected outcomes
+# - **Prerequisites**: Required data, schema setup, permissions
+# - **Step-by-Step Process**: Each transformation with clear explanations
+# - **Validation**: Data quality checks, row counts, sample queries
+# - **Visualization**: Charts showing transformation results
+# - **Summary**: Key takeaways, next steps, troubleshooting
+
+### Notebook Deployment Process:
+# **Prerequisites:**
+# - SnowSQL CLI installed and configured
+# - Appropriate Snowflake role with CREATE NOTEBOOK privileges
+# - Database and schema created (typically same as demo database)
+# - NOTEBOOKS schema created in demo database
+
+# **CRITICAL SNOWFLAKE NAMING RULES:**
+# - Snowflake object names are UPPERCASE by default unless quoted
+# - Database references in scripts must use UPPERCASE: DEMO_DATABASE
+# - Schema references must use UPPERCASE: NOTEBOOKS
+# - Only quote individual object names that need mixed case: "01_PROCESSING_NOTEBOOK"
+# - NEVER double-quote database.schema references in PUT commands
+# - Use unquoted UPPERCASE for database and schema in @ references
+
+# **Step 1: Create NOTEBOOKS Schema**
+# ```sql
+# USE DATABASE YOUR_DEMO_DATABASE;
+# CREATE SCHEMA IF NOT EXISTS NOTEBOOKS;
+# ```
+
+# **Step 2: Create Notebook Object in Snowflake**
+# ```sql
+# CREATE OR REPLACE NOTEBOOK YOUR_DEMO_DATABASE.NOTEBOOKS."01_NOTEBOOK_NAME"
+#     QUERY_WAREHOUSE = 'YOUR_WAREHOUSE_NAME'
+#     MAIN_FILE = '01_notebook_name.ipynb';
+# ```
+
+# **Step 3: Add Live Version**
+# ```sql
+# ALTER NOTEBOOK YOUR_DEMO_DATABASE.NOTEBOOKS."01_NOTEBOOK_NAME"
+#     ADD LIVE VERSION FROM LAST;
+# ```
+
+# **Step 4: Upload Notebook File**
+# **CRITICAL NOTEBOOK STAGE FORMAT**: Use snow://notebook/ format for notebook uploads
+# ```bash
+# PUT file://notebooks/01_notebook_name.ipynb 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.01_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# ```
+# **Format Rules:**
+# - Use snow://notebook/ prefix (NOT @ symbol)
+# - Use dot notation: DATABASE.SCHEMA.NOTEBOOK_NAME
+# - No quotes around notebook path components
+# - Always wrap entire path in single quotes
+# - Always end with /versions/live/
+# - **MUST include AUTO_COMPRESS=FALSE** to prevent .gz compression
+
+# **CRITICAL ANACONDA PACKAGE DEPENDENCIES**:
+# When notebooks use external packages (plotly, pandas, etc.), MUST create environment.yml file:
+# 1. **Create environment.yml** in same folder as notebook (.ipynb file)
+# 2. **Specify package dependencies** using Anaconda channel format:
+#    ```yaml
+#    name: app_environment
+#    channels:
+#      - snowflake
+#    dependencies:
+#      - plotly=*
+#      - pandas=*
+#    ```
+# 3. **Upload environment.yml** with same PUT command to same location:
+#    ```bash
+#    PUT file://notebooks/environment.yml 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.01_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+#    ```
+# 4. **Required for**: Any notebook using visualization libraries (plotly, matplotlib), data processing (pandas), or external packages
+# 5. **File location**: Must be in same directory as .ipynb file for proper dependency resolution
+
+# **Step 5: No Verification Needed**
+# **IMPORTANT**: Do NOT verify notebook file uploads with LIST commands
+# Creating a notebook automatically puts a file in it, so verification is unnecessary
+
+### Python Session Management in Notebooks:
+# **Standard Session Setup (Python cells):**
+# ```python
+# from snowflake.snowpark.context import get_active_session
+# session = get_active_session()
+# # No authentication required - uses current Snowflake session
+# ```
+
+# **Data Processing Example:**
+# ```python
+# import pandas as pd
+# from snowflake.snowpark.functions import col
+# 
+# # Read data from Snowflake table
+# df = session.table("bronze.orders")
+# 
+# # Process data
+# processed_df = df.select(
+#     col("order_id"),
+#     col("customer_data_json"),
+#     col("order_total"),
+#     col("order_date")
+# ).collect()
+# 
+# # Convert to Pandas for visualization
+# pandas_df = session.table("silver.customers").to_pandas()
+# ```
+
+### SQL Cell Best Practices:
+# **Context Setting:**
+# ```sql
+# USE DATABASE your_demo_database;
+# USE SCHEMA silver;
+# USE WAREHOUSE your_warehouse;
+# ```
+
+# **Data Transformation:**
+# ```sql
+# CREATE OR REPLACE VIEW silver.customers AS
+# SELECT 
+#     customer_data_json:customer:id::STRING AS customer_id,
+#     customer_data_json:customer:name::STRING AS customer_name,
+#     customer_data_json:customer:email::STRING AS email,
+#     customer_data_json:customer:status::STRING AS status,
+#     customer_data_json:customer:lifetime_value::DECIMAL AS lifetime_value
+# FROM bronze.orders
+# WHERE customer_data_json:customer IS NOT NULL;
+# ```
+
+# **Validation Queries:**
+# ```sql
+# SELECT COUNT(*) as total_customers FROM silver.customers;
+# SELECT * FROM silver.customers LIMIT 5;
+# ```
+
+### Notebook Creation Best Practices:
+# **Create complete notebooks efficiently:**
+# 1. Generate entire notebook JSON structure in single operation
+# 2. Save directly as .ipynb file using edit_file (NOT edit_notebook)
+# 3. Include all cells: markdown headers, SQL code, validation queries
+# 4. Add proper metadata for Snowflake compatibility
+# 5. **Create environment.yml** if notebook uses external packages (plotly, pandas, etc.)
+# 6. Test locally before deploying to Snowflake
+
+# **Example notebook JSON structure with CORRECT cell metadata:**
+# ```json
+# {
+#  "cells": [
+#   {
+#    "cell_type": "markdown",
+#    "metadata": {},
+#    "source": ["# Notebook Title"]
+#   },
+#   {
+#    "cell_type": "code", 
+#    "execution_count": null,
+#    "metadata": {"language": "sql"},
+#    "outputs": [],
+#    "source": ["-- SQL code here", "SELECT * FROM table;"]
+#   },
+#   {
+#    "cell_type": "code",
+#    "execution_count": null, 
+#    "metadata": {},
+#    "outputs": [],
+#    "source": ["# Python code here", "from snowflake.snowpark.context import get_active_session", "session = get_active_session()"]
+#   }
+#  ],
+#  "metadata": {
+#   "kernelspec": {"display_name": "Snowflake", "language": "sql", "name": "snowflake"},
+#   "language_info": {"name": "sql", "version": ""}
+#  },
+#  "nbformat": 4, "nbformat_minor": 2
+# }
+# ```
+
+### Notebook Deployment Automation:
+# **Create notebook_deploy.sql script:**
+# ```sql
+# -- Create notebooks schema
+# USE DATABASE YOUR_DEMO_DATABASE;
+# CREATE SCHEMA IF NOT EXISTS NOTEBOOKS;
+# 
+# -- Deploy all notebooks (customize names based on your demo)
+# CREATE OR REPLACE NOTEBOOK NOTEBOOKS."01_NOTEBOOK_NAME"
+#     QUERY_WAREHOUSE = 'YOUR_WAREHOUSE_NAME'
+#     MAIN_FILE = '01_notebook_name.ipynb';
+# 
+# ALTER NOTEBOOK NOTEBOOKS."01_NOTEBOOK_NAME"
+#     ADD LIVE VERSION FROM LAST;
+# 
+# -- Repeat for each notebook...
+# ```
+
+# **Create notebook_upload.sh script:**
+# ```bash
+# #!/bin/bash
+# # Upload all notebook files (customize notebook names based on your demo)
+# PUT file://notebooks/01_*.ipynb 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.01_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# PUT file://notebooks/02_*.ipynb 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.02_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# PUT file://notebooks/03_*.ipynb 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.03_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# PUT file://notebooks/04_*.ipynb 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.04_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# 
+# # Upload environment.yml files if notebooks use external packages
+# PUT file://notebooks/environment.yml 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.01_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# PUT file://notebooks/environment.yml 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.02_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# PUT file://notebooks/environment.yml 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.03_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# PUT file://notebooks/environment.yml 'snow://notebook/YOUR_DEMO_DATABASE.NOTEBOOKS.04_NOTEBOOK_NAME/versions/live/' AUTO_COMPRESS=FALSE;
+# ```
+
+### Error Handling and Troubleshooting:
+# **Common Issues:**
+# - **Permission Denied**: Ensure role has CREATE NOTEBOOK privileges
+# - **Warehouse Not Found**: Verify warehouse name and permissions
+# - **File Upload Fails**: Check file path and SnowSQL configuration
+# - **Database Not Found**: Use UPPERCASE database names (DEMO_DATABASE)
+# - **Schema Case Issues**: Use UPPERCASE schema names (NOTEBOOKS)
+# - **PUT Command Failures**: Use snow://notebook/ format for notebook uploads, NOT @ references
+# - **Stage Not Found**: Notebooks require special snow://notebook/ prefix with dot notation
+# - **Session Issues**: Ensure get_active_session() is called in Python cells
+
+# **CRITICAL NOTEBOOK CREATION RULES:**
+# 1. **Generate complete notebook JSON structure** and save as .ipynb file using edit_file
+#    - DO NOT use edit_notebook tool cell-by-cell - it doesn't persist properly
+#    - Create entire notebook as JSON in one operation for efficiency and reliability
+#    - **WORKAROUND**: If edit_file is blocked for .ipynb files, create as .json first then rename to .ipynb
+# 
+# 2. **CRITICAL CELL METADATA REQUIREMENTS:**
+#    - **SQL Cells MUST include**: `"metadata": {"language": "sql"}`
+#    - **Python Cells use**: `"metadata": {}` (standard code cell metadata)
+#    - **Markdown Cells use**: `"metadata": {}` (standard markdown metadata)
+#    - **WRONG SQL Cell**: `"metadata": {}` (will not execute as SQL)
+#    - **RIGHT SQL Cell**: `"metadata": {"language": "sql"}` (executes as SQL)
+#    - This metadata determines how Snowflake interprets and executes the cell
+# 
+# **CRITICAL VERIFICATION RULE:**
+# **DO NOT** create verification commands or LIST operations for notebook uploads
+# Notebook creation automatically includes files, verification is unnecessary and can cause confusion
+
+### Notebook Best Practices:
+# - **Modular Design**: Each notebook focuses on specific transformation step
+# - **Clear Documentation**: Every cell has purpose and expected outcome
+# - **Error Handling**: Graceful handling of data quality issues
+# - **Performance Awareness**: Include query execution time monitoring
+# - **Interactive Elements**: Visualizations and summary statistics
+# - **Educational Focus**: Explanations suitable for hands-on learning
+# - **Version Control**: Keep local copies in notebooks/ folder for updates
+
+## Industry-Specific Customizations
+# When generating demos, adapt content for:
+# - Financial Services: Risk management, fraud detection, regulatory compliance
+# - Healthcare: Patient analytics, drug discovery, clinical trials
+# - Retail: Customer segmentation, inventory optimization, demand forecasting
+# - Manufacturing: Supply chain optimization, predictive maintenance, quality control
+# - Media: Content personalization, audience analytics, ad optimization
+
+## AI/ML Integration Requirements
+# - Implement Cortex AI functions for text analysis
+# - Include sentiment analysis capabilities
+# - Add natural language query interface
+# - Demonstrate multilingual support
+# - Show real-time AI/ML inference
+
+## Performance Optimization
+# - Implement proper indexing strategies
+# - Use result caching where appropriate
+# - Optimize queries for demo performance
+# - Include performance monitoring and metrics
+# - Demonstrate auto-scaling capabilities
+
+## Security Implementation
+# - Use environment variables for all credentials
+# - Implement role-based access controls
+# - Show data masking and encryption features
+# - Include audit logging capabilities
+# - Demonstrate secure data sharing
+
+## Testing Requirements
+# - Include unit tests for all Python functions
+# - Implement integration tests for Snowflake connections
+# - Add performance benchmarks
+# - Include data validation tests
+# - Provide load testing scenarios
+
+## Deployment Considerations
+# - Create containerized deployment options
+# - Include CI/CD pipeline configurations
+# - Provide cloud deployment scripts
+# - Add monitoring and alerting setup
+# - Include rollback procedures
+
+## Error Handling Standards
+# - Implement comprehensive try-catch blocks
+# - Provide user-friendly error messages
+# - Include logging for debugging
+# - Add fallback mechanisms
+# - Show graceful degradation
+
+## Comments and Documentation
+# - Add clear, business-focused comments
+# - Include performance considerations
+# - Explain Snowflake-specific features
+# - Document ROI calculations
+# - Provide usage examples
+
+## File Naming Conventions
+# - Use snake_case for Python files
+# - Use descriptive, industry-specific names
+# - Include version numbers where appropriate
+# - Follow Snowflake naming conventions for SQL objects
+# - Use consistent prefixes for related files
+# - **NEVER create "_fixed" or alternative versions** - always work with existing files
+# - **NEVER create "setup_complete" type consolidated files** - use modular approach
+# - **NEVER create new working versions** (e.g., "_updated", "_new", "_v2") - always update existing files in place
+# - Standard setup files: setup_database_objects.sql, load_data_to_stage.sql, load_bronze_data_100.sql, load_bronze_data_1000.sql, load_bronze_data_10000.sql
+
+## PRD (Product Requirements Document) Standards
+# **MANDATORY FIRST STEP**: Before generating ANY demo files, create a comprehensive PRD
+# The PRD serves as the blueprint and roadmap for the entire demo development process
+# 
+# ### PRD Structure and Content Requirements:
+# - **Executive Summary**: Clear business problem statement and Snowflake solution overview
+# - **Customer Profile**: Industry, company size, technical maturity, key stakeholders
+# - **Use Case Definition**: Primary and secondary use cases with specific business outcomes
+# - **Technical Requirements**: Snowflake workloads, data volumes, performance targets
+# - **Demo Type**: Hands-On-Lab (HOL) or Full Demo - defines delivery model and setup requirements
+# - **Demo Scope**: What will be demonstrated, what will be simulated, timeline constraints
+# - **Success Criteria**: How demo effectiveness will be measured (conversion, engagement, etc.)
+# - **Competitive Positioning**: Key differentiators to highlight vs. competitors
+# - **Data Strategy**: Types of data needed, synthetic generation approach, compliance requirements
+# - **Data Layout & Structure**: Detailed schema design, table relationships, sample data formats (allows modifications during development)
+# - **User Journey**: Step-by-step walkthrough of demo presentation flow
+# - **Technical Architecture**: High-level system design, medallion architecture approach
+# - **ROI Framework**: Cost savings, revenue impact, efficiency gains calculations
+# - **Risk Assessment**: Potential demo failure points and mitigation strategies
+# - **Deployment Plan**: Setup requirements, dependencies, troubleshooting guide
+# - **Follow-up Strategy**: Post-demo engagement, POC transition, expansion opportunities
+# 
+# ### PRD File Requirements:
+# - **File Name**: `PRD.md` (located in workspace root)
+# - **File Location**: MUST be created in the workspace root (PRD.md in the main folder)
+# - **Format**: Markdown with clear sections and subsections
+# - **Length**: Comprehensive but concise (typically 3-5 pages)
+# - **Approval Gate**: PRD must be complete before proceeding to any other demo artifacts
+# - **Version Control**: Include version number and last updated date
+# - **Stakeholder Sign-off**: Include section for customer and SE approval
+# 
+# ### PRD Validation Checklist:
+# - [ ] All 16 required sections completed
+# - [ ] Demo type (HOL vs Full Demo) clearly selected with appropriate delivery model
+# - [ ] Industry-specific use cases clearly defined
+# - [ ] Technical requirements aligned with Snowflake capabilities
+# - [ ] Data requirements documented and feasible
+# - [ ] Data layout and schema design clearly defined with modification flexibility
+# - [ ] Success metrics quantified
+# - [ ] Risk mitigation strategies identified
+# - [ ] Demo flow provides clear value progression
+# - [ ] ROI calculations are realistic and defensible
+# - [ ] Competitive differentiation is compelling
+# - [ ] Deployment approach is practical
+
+## When generating any Snowflake demo:
+# 1. **CREATE PRD FIRST**: Generate comprehensive PRD.md as the foundation document
+# 2. Ask for customer name, industry, specific use cases, and demo type (HOL vs Full Demo)
+# 3. Create complete project structure following the template
+# 4. Generate industry-specific synthetic data (consult data_generation_rules.md)
+# 5. Implement multi-workload Snowflake capabilities
+# 6. Build intuitive Streamlit interface
+# 7. Include comprehensive documentation
+# 8. Add ROI calculations and business value metrics
+# 9. Ensure all quality gates are met
+# 10. Provide deployment and scaling guidance
+# 11. Test thoroughly before delivery
+
+## File Creation and Organization Rules
+# ALWAYS follow these rules when creating files:
+# 1. Check current working directory - this IS your demo workspace (workspace root = demo root)
+# 2. Create ALL demo files within the current workspace directory
+# 3. NEVER create files in parent directories (../anything)
+# 4. Organize files in appropriate subdirectories (data/, streamlit/, snowflake_sql/, notebooks/, setup/, docs/, img/)
+# 5. When moving files, ensure no duplicates remain in wrong locations
+# 6. CRITICAL: When using edit_file tool, ALWAYS use relative paths from current working directory
+# 7. For demo files: use "setup/README.md" NOT "../setup/README.md"
+# 8. Before creating any file, confirm the path is within the current workspace
+# 9. CRITICAL: PRD.md MUST be created in the workspace root (same level as .cursorrules)
+
+## Workspace Configuration Files
+# - .cursorrules: AI assistant rules and guidelines
+# - .gitignore: Version control exclusions
+# - .venv/: Python virtual environment
+# - data_generation_rules.md: Data generation guidance for this demo
+# These files provide configuration and guidance for the demo workspace
+
+## Success Metrics
+# - Demo preparation time reduced by 70%
+# - Technical win rate increased by 40%
+# - Customer engagement scores >8/10
+# - Time to POC reduced by 60%
+# - Seamless SE to expansion team handoffs
+
+## Environment Setup Command
+# When user requests environment setup (phrases like "setup environment", "create venv", "install dependencies"):
+# ALWAYS execute these steps in sequence:
+# 1. Run: python3 -m venv .venv
+# 2. Run: source .venv/bin/activate (or .venv\Scripts\activate on Windows)
+# 3. Create requirements.txt with standard Snowflake demo dependencies
+# 4. Run: pip install -r requirements.txt
+# 5. Run: pip list to verify installations
+# 6. Confirm environment is ready for Snowflake demo development 
+
+## Demo Deployment Workflow
+# When user requests to deploy a demo, ALWAYS follow this sequence:
+# 1. **Check Data Generation Status**: Verify if demo data files exist in data/ folder
+#    - Look for CSV files (*.csv) in data/ directory
+#    - Check if data generator script exists and has been run
+#    - Validate data files are not empty and have expected structure
+#    - **VALIDATE data file schemas against PRD.md Bronze layer documentation**
+# 2. **Data Generation Decision**: If data files are missing or incomplete:
+#    - Ask user: "Demo data not found. Would you like me to generate the demo data first?"
+#    - If user says yes, run the data generation process with schema validation
+#    - If user says no, explain they need data before deployment
+#    - **ENSURE generated data schemas match PRD specifications**
+# 3. **Schema Validation Pre-Deployment**: Before database setup:
+#    - **Cross-reference setup_database_objects.sql against PRD.md Bronze schemas**
+#    - **Verify column names and data types match PRD documentation**  
+#    - **Update PRD.md if setup scripts create different schemas than documented**
+#    - **Confirm JSON structure definitions align with PRD specifications**
+#    - **Database queries only needed if documentation is unclear**
+# 4. **Follow Setup Instructions**: If data exists and schemas validated:
+#    - Reference and follow the steps documented in setup/README.md
+#    - Provide the step-by-step commands for Snowflake setup
+#    - Guide through both automated and manual setup options
+#    - **Include schema validation queries in deployment process**
+#    - Validate successful deployment with sample queries
+# 5. **Post-Deployment Schema Verification**: After successful Snowflake setup:
+#    - **Run validation queries to confirm deployed schemas match PRD documentation**
+#    - **Update PRD.md if any discrepancies found between deployed reality and documentation**
+#    - Test sample queries using PRD documented column names
+#    - Offer to launch Streamlit dashboard
+#    - Provide next steps for demo presentation
+#    - Confirm all components are working properly
+
+## Data Loading and Setup Completion
+# When completing any Snowflake demo project, ALWAYS offer both data loading options:
+# 1. **Python-based loading** (load_data_to_snowflake.py):
+#    - Automatic database object creation
+#    - Data validation and business logic checks
+#    - Error handling and logging
+#    - Sample query execution
+# 2. **SnowSQL-based loading** (load_data_snowsql.sql + setup script):
+#    - Native Snowflake CLI approach
+#    - Batch SQL execution
+#    - Manual control over each step
+#    - Traditional SQL workflow
+#    - NEVER overwrite existing SnowSQL configurations
+#    - Respect user's existing ~/.snowsql/config settings
+#    - Only guide configuration setup if no config exists
+
+# **MANDATORY SCHEMA VALIDATION FOR DATA LOADING:**
+# Before creating any database setup scripts:
+# 1. **Verify PRD.md Bronze layer documentation** matches target table schemas in setup_database_objects.sql
+# 2. **Cross-reference all column names** between data files and CREATE TABLE statements
+# 3. **Validate data types alignment** between generated data and table definitions
+# 4. **Ensure JSON column structures** match PRD documented JSON paths and types
+# 5. **If target schemas differ from PRD**: UPDATE PRD.md before proceeding with loading scripts
+
+# **POST-LOADING SCHEMA VALIDATION:**
+# After successful data loading completion:
+# 1. **Document actual deployed schemas** in PRD.md Data Layout & Structure section
+# 2. **Verify column counts and types** match PRD documentation
+# 3. **Test sample queries** using PRD documented column names to ensure accuracy
+# 4. **Update PRD if discrepancies found** between deployed reality and documentation
+# 5. **Include validation queries** in setup scripts to confirm schema alignment
+
+# **SCHEMA VALIDATION APPROACH:**
+# **PRIMARY**: Use documentation-based validation (PRD.md + setup scripts)
+# **SECONDARY**: Database queries only for exploration/troubleshooting
+# 
+# **Documentation-First Validation:**
+# 1. PRD.md Data Layout & Structure section provides authoritative schema
+# 2. setup_database_objects.sql shows exact CREATE TABLE statements
+# 3. Data generation scripts reveal actual column names and types
+# 
+# **Optional Database Exploration (if documentation unclear):**
+# ```sql
+# -- Only use when documentation doesn't answer questions
+# DESCRIBE TABLE BRONZE.CUSTOMERS;
+# SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+# WHERE TABLE_SCHEMA = 'BRONZE' AND TABLE_NAME = 'CUSTOMERS';
+# SELECT * FROM BRONZE.CUSTOMERS LIMIT 3;
+# ```
+# 
+# **CRITICAL DATA LOADING STRATEGY:**
+# - ALWAYS attempt SQL-based data loading first (SnowSQL approach)
+# - NEVER automatically switch to Python loading without user permission
+# - When SQL loading fails, summarize the error clearly to the user
+# - Present the error summary and ask user to choose next steps:
+#   - Option 1: Try Python-based loading approach
+#   - Option 2: Manual troubleshooting of SQL issues
+#   - Option 3: Continue with empty tables for demo purposes
+# - Respect user choice and do not assume preferred approach
+# 
+# **DATA LOADING BY DEMO TYPE:**
+# - **Hands-On-Labs (HOL)**: Load only BRONZE layer data during setup
+#   - Create SILVER and GOLD layer scripts but do not execute them
+#   - Provide step-by-step notebooks/worksheets for customers to build layers
+#   - Include validation queries to check customer progress
+#   - **ENSURE PRD documents target Silver/Gold schemas** before creating notebook templates
+# - **Full Demo**: Load all layers (BRONZE, SILVER, GOLD) during setup
+#   - Complete data pipeline ready for immediate demonstration
+#   - All Streamlit apps and notebooks fully functional
+#   - Business-ready analytics and dashboards operational
+#   - **VALIDATE all deployed schemas match PRD documentation**
+# 
+# For each demo completion:
+# - Create both Python and SnowSQL loading options in setup/ folder
+# - Organize setup files: setup/python/, setup/snowsql/, setup/docs/
+# - Provide clear setup instructions for each approach
+# - Include configuration templates (snowflake_config.template)
+# - Create consolidated SnowSQL script (load_data_complete.sql) for one-command setup
+# - **Include schema validation queries** in all setup scripts
+# - Offer to run the data loading process
+# - **Validate successful data loading AND schema accuracy** with sample queries
+# - **Update PRD.md post-deployment** if any schema discrepancies found
+# - Provide next steps for launching Streamlit dashboards
+# - Respect existing user configurations and preferences
+# - Ensure all setup files are within current workspace directory
+
+## Behavioral Learning Rules - Les Furets Demo Experience
+
+*Critical lessons learned from Les Furets demo development to prevent repeated mistakes*
+
+### 🚨 **CRITICAL BEHAVIORAL FAILURES - NEVER REPEAT**
+
+#### **1. Column Name Assumptions**
+- **FAILURE**: Added filters using assumed column names without verifying actual schema
+- **ROOT CAUSE**: Assumed column name without verifying documented table structure
+- **PREVENTION**: MANDATORY schema validation using PRD.md and setup scripts before ANY SQL generation
+- **VALIDATION PROCESS**:
+  1. Check PRD.md Data Layout & Structure section for documented schemas
+  2. Cross-reference setup/snowsql/setup_database_objects.sql CREATE TABLE statements
+  3. Verify data generation scripts for actual column names and types
+  4. **Only if still unclear**: Query database for exploration
+- **ENFORCEMENT**: This rule supersedes all other considerations - NEVER skip schema validation
+
+#### **2. Cross-Table Logic Errors**
+- **FAILURE**: Referenced columns that exist in different tables without proper joins
+- **ROOT CAUSE**: Misunderstood data architecture without examining all related tables
+- **PREVENTION**: Map entire data model before writing analytics logic
+- **VALIDATION PROCESS**:
+  - Examine ALL tables in Bronze layer
+  - Document table relationships and join keys  
+  - Verify business logic assumptions with sample data
+- **ENFORCEMENT**: Always validate business logic with actual data structure
+
+#### **3. Data Type Interpretation Errors**
+- **FAILURE**: Misinterpreted column semantics without examining actual data values
+- **ROOT CAUSE**: Made assumptions about column meaning without understanding data context
+- **PREVENTION**: Understand column semantics from PRD documentation and data generation logic
+- **VALIDATION PROCESS**:
+  1. Review PRD.md business logic and data definitions
+  2. Examine data generation scripts for value ranges and patterns
+  3. Check sample data files for realistic value distributions
+  4. **Only if unclear**: Query database to explore data patterns
+- **ENFORCEMENT**: Understand data context before building analytics logic
+
+#### **4. Incomplete Data Understanding**
+- **FAILURE**: Made analytical assumptions without proper data exploration
+- **ROOT CAUSE**: Drew conclusions without examining actual data patterns
+- **PREVENTION**: Comprehensive data exploration before making analytical assumptions
+- **VALIDATION PROCESS**:
+  - Generate summary statistics for all numeric columns
+  - Examine data distribution patterns
+  - Test analytical assumptions with sample queries
+- **ENFORCEMENT**: Prove data patterns with queries, never assume
+
+### 🛡️ **MANDATORY VALIDATION WORKFLOW**
+
+#### **Before Generating ANY Notebook/SQL Code:**
+
+**Step 1: PRD Schema Validation**
+```
+1. Check PRD.md Data Layout & Structure section for all schemas
+2. Validate Bronze, Silver, and Gold layer table definitions
+3. Cross-reference all column names against documented schemas
+```
+
+**Step 2: Setup Script Verification**
+```
+1. Review setup/snowsql/setup_database_objects.sql for CREATE TABLE statements
+2. Verify column names, data types, and constraints match PRD
+3. Check for any schema discrepancies between PRD and setup scripts
+```
+
+**Step 3: Data Generation Logic Review**
+```
+1. Examine data generation scripts for column structure and value patterns
+2. Understand business logic and realistic data ranges
+3. Check sample data files for actual column headers and value distributions
+```
+
+**Step 4: Table Relationship Mapping**
+```
+1. Document join keys and foreign key relationships from PRD
+2. Verify table relationships match documented business logic
+3. Map data flow: Bronze → Silver → Gold transformations
+```
+
+**Step 5: Database Exploration (Optional - only if documentation unclear)**
+```sql
+-- Only use if PRD/setup scripts don't provide clear answers
+DESCRIBE TABLE bronze.customers;
+SELECT * FROM bronze.customers LIMIT 3;
+-- Understand actual deployed schema vs documented schema
+```
+
+### 🎯 **ERROR PREVENTION CHECKLIST**
+
+#### **For Every SQL Query Generated:**
+- [ ] All column names verified against PRD.md schema documentation
+- [ ] All table relationships mapped using PRD specifications
+- [ ] Setup scripts reviewed for actual CREATE TABLE definitions
+- [ ] Data generation logic understood for realistic value ranges
+- [ ] Join conditions validated against documented relationships
+- [ ] Database exploration only if documentation insufficient
+
+#### **For Every Analytics Assumption:**
+- [ ] Data distribution patterns examined
+- [ ] Statistical summaries generated to verify assumptions
+- [ ] Edge cases and outliers identified
+- [ ] Cross-table dependencies understood and documented using PRD schemas
+
+#### **For Every Notebook Cell:**
+- [ ] Column existence validated against PRD before referencing
+- [ ] JSON path expressions tested with sample data
+- [ ] Aggregation logic verified with known data patterns
+- [ ] Error handling included for data quality issues
+
+### General Data Quality Principles
+1. **Realistic Data Modeling**: Implement business logic that reflects real-world patterns and distributions
+2. **Schema Validation**: Ensure analytics logic matches actual table relationships documented in PRD
+3. **Column Reference Accuracy**: Use documented column names verified against PRD schemas
+4. **Threshold Validation**: Use realistic value ranges based on business context and data patterns
+5. **Documentation Consistency**: Ensure all Silver/Gold schemas are documented in PRD before coding

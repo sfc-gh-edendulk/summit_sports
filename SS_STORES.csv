@@ -1,0 +1,41 @@
+STORE_NAME,ADDRESS,PHONE,STORE_TYPE,POSTCODE,STOREID
+SUMMITSPORT Chamonix-Mont-Blanc,12 Avenue Michel Croz 74400 Chamonix-Mont-Blanc France,+33 4 50 47 29 96,Montagne,74400,M74400C
+SUMMITSPORT La Toussuire,74 Rue Pierre Delore 73300 Fontcouverte-la-Toussuire France,+33 4 79 83 03 25,Montagne,73300,M73300F
+SUMMITSPORT La Plagne Montalbert,71 Rue du Vieux Village 73210 Montalbert La Plagne France,+33 4 79 09 78 28,Montagne,73210,M73210M
+SUMMITSPORT Les Deux Alpes,85 Avenue de la Muzelle 38860 Les Deux Alpes France,+33 4 76 79 22 91,Montagne,38860,M38860L
+SUMMITSPORT Val d'Isère,Route de la Balme 73150 Val d'Isère France,+33 4 79 06 07 07,Montagne,73150,M73150V
+SUMMITSPORT Tignes Le Lac,Le Rosset 73320 Tignes France,+33 4 79 06 35 30,Montagne,73320,M73320T
+SUMMITSPORT Méribel,Route du Centre 73550 Méribel France,+33 4 79 08 60 35,Montagne,73550,M73550M
+SUMMITSPORT Courchevel 1850,La Croisette 73120 Courchevel France,+33 4 79 08 08 25,Montagne,73120,M73120C
+SUMMITSPORT Les Menuires,Immeuble Le Pelvoux 73440 Les Menuires France,+33 4 79 00 74 54,Montagne,73440,M73440L
+SUMMITSPORT Val Thorens,Place Caron 73440 Val Thorens France,+33 4 79 00 01 80,Montagne,73440,M73440V
+SUMMITSPORT Alpe d'Huez,Avenue des Jeux 38750 Alpe d'Huez France,+33 4 76 80 31 46,Montagne,38750,M38750A
+SUMMITSPORT Serre Chevalier,Place de l'Aravet 05240 La Salle-les-Alpes France,+33 4 92 24 71 79,Montagne,05240,M05240L
+SUMMITSPORT Montgenèvre,Route d'Italie 05100 Montgenèvre France,+33 4 92 21 90 46,Montagne,05100,M05100M
+SUMMITSPORT La Clusaz,9 Place de l'Église 74220 La Clusaz France,+33 4 50 02 40 83,Montagne,74220,M74220L
+SUMMITSPORT Les Gets,126 Rue du Centre 74260 Les Gets France,+33 4 50 79 74 38,Montagne,74260,M74260L
+SUMMITSPORT Morzine,100 Route de la Plagne 74110 Morzine France,+33 4 50 79 03 21,Montagne,74110,M74110M
+SUMMITSPORT Samoëns,28 Place du Gros Tilleul 74340 Samoëns France,+33 4 50 34 40 57,Montagne,74340,M74340S
+SUMMITSPORT Megève,21 Rue Monseigneur Conseil 74120 Megève France,+33 4 50 21 05 97,Montagne,74120,M74120M
+SUMMITSPORT Les Arcs 1800,Village des Villards 73700 Les Arcs France,+33 4 79 07 43 21,Montagne,73700,M73700L
+SUMMITSPORT La Rosière,Les Eucherts 73700 La Rosière France,+33 4 79 06 86 16,Montagne,73700,M73700L
+SUMMITSPORT Bayonne,1 Rue Raoul Perpere 64100 Bayonne France,05 59 15 17 30,Montagne,64100,M64100B
+SUMMITSPORT Bidart,51 Avenue de Bayonne 64210 Bidart France,05 59 15 17 75,Plaine,64210,P64210B
+SUMMITSPORT Brest,126 Boulevard Plymouth Centre Commercial Iroise 29200 Brest France,02 98 49 34 44,Plaine,29200,P29200B
+SUMMITSPORT Prémilhat,Avenue Martyrs 03410 Prémilhat France,04 70 29 08 26,Plaine,03410,P03410P
+SUMMITSPORT Labège,Rue du Commerce 31670 Labège France,05 61 39 22 39,Plaine,31670,P31670L
+SUMMITSPORT Fort-de-France,Avenue de Dillon 97200 Fort-de-France Martinique,05 96 60 83 33,Plaine,97200,P97200F
+SUMMITSPORT Paris La Défense,15 Parvis de la Défense 92800 Puteaux France,01 47 44 85 00,Plaine,92800,P92800P
+SUMMITSPORT Lyon Part-Dieu,17 Rue du Dr Bouchut 69003 Lyon France,04 72 84 12 80,Plaine,69003,P69003L
+SUMMITSPORT Marseille La Valentine,Route de la Sablière Centre Commercial La Valentine 13011 Marseille France,04 91 43 55 55,Plaine,13011,P13011M
+SUMMITSPORT Toulouse Portet-sur-Garonne,1 Boulevard de l'Europe 31120 Portet-sur-Garonne France,05 62 20 41 41,Plaine,31120,P31120P
+SUMMITSPORT Lille Centre,99 Rue Pierre Mauroy 59800 Lille France,03 20 57 14 14,Plaine,59800,P59800L
+SUMMITSPORT Bordeaux Lac,Avenue des 40 Journaux Centre Commercial Bordeaux Lac 33300 Bordeaux France,05 56 50 50 50,Plaine,33300,P33300B
+SUMMITSPORT Strasbourg Hautepierre,1 Rue du Maréchal Lefebvre 67200 Strasbourg France,03 88 10 10 10,Plaine,67200,P67200S
+SUMMITSPORT Nice Lingostière,606 Boulevard du Mercantour Centre Commercial Nice Lingostière 06200 Nice France,04 93 29 29 29,Plaine,06200,P06200N
+SUMMITSPORT Nantes Atlantis,20 Rue du Moulin de la Rousselière 44800 Saint-Herblain France,02 40 92 92 92,Plaine,44800,P44800S
+SUMMITSPORT Montpellier Odysseum,2 Place de Lisbonne Centre Commercial Odysseum 34000 Montpellier France,04 67 64 64 64,Plaine,34000,P34000M
+SUMMITSPORT Rennes Chantepie,3 Rue du Moulin de Joué 35135 Chantepie France,02 99 41 41 41,Plaine,35135,P35135C
+SUMMITSPORT Grenoble Grand'Place,55 Grand Place 38100 Grenoble France,04 76 23 23 23,Plaine,38100,P38100G
+SUMMITSPORT Dijon Toison d'Or,5 Rue de la Toison d'Or 21000 Dijon France,03 80 74 74 74,Plaine,21000,P21000D
+SUMMITSPORT Tours Nord,9 Rue des Granges Galand 37550 Saint-Avertin France,02 47 27 27 27,Plaine,37550,P37550S

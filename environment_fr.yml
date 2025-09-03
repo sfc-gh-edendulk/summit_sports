@@ -1,0 +1,10 @@
+# Fichier d'environnement Snowflake pour l'application Streamlit français
+name: summit_sports_analytics_fr
+channels:
+  - snowflake
+  - nodefaults
+dependencies:
+  - streamlit
+  - pandas
+  - plotly
+  - snowflake-snowpark-python 

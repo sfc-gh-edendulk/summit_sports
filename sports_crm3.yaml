@@ -1,0 +1,742 @@
+name: sports_crm3
+tables:
+  - name: INSTORE_SALES_DATA_CRM3
+    base_table:
+      database: SPORTS_DB
+      schema: SPORTS_DATA
+      table: INSTORE_SALES_DATA_CRM3
+    dimensions:
+      - name: ORDER_ID
+        expr: ORDER_ID
+        data_type: VARCHAR(16777216)
+        description: Identifiant unique pour chaque commande client.
+        sample_values:
+          - bc4cbe9c-ff28-408d-abdc-7934b1abfef8
+          - 229f481f-e595-4811-b707-b30476a45f4a
+          - c9640032-af11-4ee4-8787-9a6430bac84c
+        synonyms:
+          - numéro de commande
+          - vente
+          - transaction
+          - achat
+          - commande
+      - name: STOREID
+        expr: STOREID
+        data_type: VARCHAR(16777216)
+        description: Identifiant unique pour l'emplacement d'un magasin de détail.
+        sample_values:
+          - M38860L
+          - P06200N
+          - M73440V
+        synonyms:
+          - id_magasin
+          - store_code
+          - retail_location_id
+          - outlet_id
+          - shop_id
+          - location_id
+      - name: STORE_NAME
+        expr: STORE_NAME
+        data_type: VARCHAR(16777216)
+        description: Le nom du magasin Summit Sport où la vente a été effectuée.
+        sample_values:
+          - SUMMITSPORT La Toussuire
+          - SUMMITSPORT Les Deux Alpes
+          - SUMMITSPORT Dijon Toison d'Or
+        synonyms:
+          - magasin
+          - boutique
+          - site
+          - commerce
+      - name: PRODUCT_ID
+        expr: PRODUCT_ID
+        data_type: VARCHAR(16777216)
+        description: Identifiant unique d'un produit vendu en magasin.
+        sample_values:
+          - FIT-6168
+          - MEN-1981
+          - KID-1617
+        synonyms:
+          - item_id
+          - product_code
+          - item_code
+          - identifiant produit
+          - sku
+          - stock_id
+          - article
+          - referentiel produit
+      - name: PAYMENT_METHOD
+        expr: PAYMENT_METHOD
+        data_type: VARCHAR(16777216)
+        description: La méthode par laquelle un client a payé son achat en magasin, par exemple en utilisant de l'argent liquide, une carte-cadeau ou une carte de débit.
+        sample_values:
+          - Cash
+          - Gift Card
+          - Debit Card
+        synonyms:
+          - payment_type
+          - méthode de paiement
+          - mode de paiement
+          - espèces
+          - carte cadeau
+      - name: SALES_ASSISTANT_ID
+        expr: SALES_ASSISTANT_ID
+        data_type: VARCHAR(16777216)
+        description: Identifiant unique du vendeur qui a participé à la vente.
+        sample_values:
+          - ASSISTANT_59
+          - ASSISTANT_244
+          - ASSISTANT_648
+        synonyms:
+          - vendeur
+          - vendeuse
+          - assistant
+          - commercant
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR(16777216)
+        description: Identifiant unique du client qui a effectué l'achat en magasin.
+        sample_values:
+          - 11624210-e1eb-4c59-b35e-4ecd272c898d
+          - 014d3ed4-025a-4f2f-b71d-dfe710a3a538
+        synonyms:
+          - client_id
+          - identifiant client
+          - code client
+          - referentiel client
+          - consommateur
+          - client
+          - acheteur
+      - name: CARD_ID
+        expr: CARD_ID
+        data_type: VARCHAR(16777216)
+        description: Identifiant unique de la carte de fidélité ou de récompenses d'un client.
+        sample_values:
+          - 21fa997d-cd5a-4cb3-a785-b0a66ce65c80
+          - 984ce965-0cef-4b5e-b1a0-5f0e5a72d760
+          - 403a9709-50e4-4d53-b747-adc659c33c22
+        synonyms:
+          - loyalty_card_number
+          - carte de fidelité
+          - carte d'adhésion
+          - numéro de fidélité
+    time_dimensions:
+      - name: SALE_DATE
+        expr: SALE_DATE
+        data_type: DATE
+        description: Date à laquelle la vente a été réalisée.
+        sample_values:
+          - '2025-03-03'
+          - '2024-11-06'
+          - '2024-11-05'
+        synonyms:
+          - sale_timestamp
+          - transaction_date
+          - date de vente
+          - date
+          - date d'achat
+    facts:
+      - name: QUANTITY
+        expr: QUANTITY
+        data_type: NUMBER(38,0)
+        description: La quantité d'articles vendus
+        sample_values:
+          - '4'
+          - '3'
+          - '2'
+        synonyms:
+          - volume
+          - quantité
+          - nombre de produits
+          - volume de produits
+      - name: SALES_PRICE_EURO
+        expr: SALES_PRICE_EURO
+        data_type: FLOAT
+        description: Le prix de vente d'un produit en euros au moment de la vente.
+        sample_values:
+          - '74.97'
+          - '159.98'
+          - '15'
+        synonyms:
+          - revenu
+          - prix
+          - coute
+          - rapport
+          - gain
+          - recette
+        default_aggregation: 1
+    primary_key:
+      columns:
+        - CUSTOMER_ID
+        - PRODUCT_ID
+  - name: SPORTS_PRODUCT_CATALOGUE
+    base_table:
+      database: SPORTS_DB
+      schema: SPORTS_DATA
+      table: SPORTS_PRODUCT_CATALOGUE
+    dimensions:
+      - name: PRODUCT_NAME
+        expr: PRODUCT_NAME
+        data_type: VARCHAR(16777216)
+        description: ''
+        sample_values:
+          - 100 Base Layer Ski Pants Women's
+          - Thermal Underwear Base Layer Top Women's
+          - 100 Ski Jacket Men's
+        synonyms:
+          - item_name
+          - product_title
+          - product_label
+          - item_description
+          - product_identifier
+          - product_heading
+          - nom de l'article
+          - nom du produit
+          - libellé du produit
+          - identifiant produit
+          - article
+          - description de l'article
+          - identifiant du produit
+          - référence du produit
+          - numéro de produit
+      - name: BRAND
+        expr: BRAND
+        data_type: VARCHAR(16777216)
+        description: The brand name of the sports product.
+        sample_values:
+          - Wedze
+          - Forclaz
+          - Domyos
+        synonyms:
+          - maker
+          - manufacturer
+          - label
+          - trademark
+          - company
+          - name
+          - producer
+          - fabricant
+          - créateur
+          - producteur
+          - étiquette
+          - marque
+          - société
+          - firme
+      - name: COLOUR
+        expr: COLOUR
+        data_type: VARCHAR(16777216)
+        description: The colour of the sports product.
+        sample_values:
+          - Black
+          - Whale Gray
+          - Light Gray
+        synonyms:
+          - color
+          - hue
+          - shade
+          - tint
+          - tone
+          - pigment
+          - dye
+          - couleur
+          - teinte
+          - coloration
+          - coloris
+          - pigment
+          - nuance
+          - coloris
+          - tonalité
+          - dégradé
+          - teinture
+          - colorant
+          - colorant textile
+      - name: DESCRIPTION
+        expr: DESCRIPTION
+        data_type: VARCHAR(16777216)
+        description: ''
+        sample_values:
+          - '["100 Base Layer Ski Pants Women''s | Designed for female skiers practicing at low intensity (low levels of perspiration), looking for a soft, comfortable base layer in cold weather.", ''Enjoy a warm and comfortable base layer with a brushed component, flat seams, and a stretch knit.'', ''Moisture wicking'', ''VERY LOW: component encourages wicking and minimal drying.'', ''Warmth'', ''AVERAGE: brushed interior for warmth.'', ''Odor control'', ''VERY LOW: polyester fiber has low capacity to reduce odors.'']'
+          - '["Thermal Underwear Base Layer Top Women''s | Designed for female skiers and snowboarders looking for a warm, technical base layer with stretch.", ''This warm base layer, will keep you comfortable throughout the day.'', ''Moisture wicking'', ''VERY LOW: a fabric that provides moisture wicking and low-level drying.'', ''Warmth'', ''AVERAGE: brushed lining for warmth.'', ''Odor control'', ''VERY LOW: the polyester fiber has a low odor-reducing capacity.'']'
+          - '["100 Ski Jacket Men''s | This warm and comfortable jacket is great for learning to ski in the best conditions.", ''In addition to being warm, this jacket provides essential protection against the elements. Ideal for making the most of your skiing holiday.'', ''Waterproof'', ''CORRECT: 3000 mm-rated coating.'', ''Warmth'', ''Insulation made of extra-thick recycled fill.'', ''Easy to use'', ''Elasticated tightening at the cuff to prevent snow from entering.'', ''Breathability'', ''Breathable fabric.'', ''Water repellent'', ''Water-repellent outer fabric that does not absorb water.'', ''User comfort'', ''A soft, warm collar for guaranteed protection and comfort.'', ''Pockets'', ''4 pockets: 2 hand, 1 ski pass, 1 inner.'']'
+        synonyms:
+          - product_info
+          - details
+          - product_description
+          - item_details
+          - product_summary
+          - product_overview
+          - item_info
+          - product_specifications
+          - informations produit
+          - renseignements produit
+          - données produit
+          - fiche produit
+          - détails produit
+          - détails
+          - informations
+          - caractéristiques
+          - précisions
+          - particularités
+          - résumé du produit
+          - synthèse du produit
+          - aperçu du produit
+          - récapitulatif du produit
+          - sommaire du produit
+          - aperçu du produit
+          - vue d'ensemble du produit
+          - présentation générale du produit
+          - informations sur l'article
+          - renseignements sur l'article
+          - données de l'article
+          - fiche d'information de l'article
+          - détails de l'article
+          - spécifications du produit
+          - caractéristiques techniques du produit
+          - fiche technique du produit
+      - name: PRODUCT_CATEGORY
+        expr: PRODUCT_CATEGORY
+        data_type: VARCHAR(16777216)
+        description: ''
+        sample_values:
+          - ' Women''s Pants'
+          - ' Women''s Thermal Underwear'
+          - ' Men''s Jackets'
+        synonyms:
+          - product_type
+          - category_name
+          - product_group
+          - item_class
+          - classification
+          - product_segment
+          - product_line
+          - category_description
+          - type de produit
+          - nature du produit
+          - genre de produit
+          - modèle de produit
+          - sorte de produit
+          - groupe de produits
+          - famille de produits
+          - gamme de produits
+          - ensemble de produits
+          - série de produits
+          - classe d'articles
+          - catégorie d'articles
+          - classification d'articles
+          - type d'articles
+          - groupe d'articles
+          - segment de produits
+          - marché de produits
+          - niche de produits
+          - secteur de produits
+          - partie de gamme de produits
+          - ligne de produits
+          - description de la catégorie
+          - descriptif de la catégorie
+          - présentation de la catégorie
+          - informations sur la catégorie
+          - détails de la catégorie
+      - name: PRODUCTID
+        expr: PRODUCTID
+        data_type: VARCHAR(16777216)
+        description: Unique identifier for each product in the sports product catalogue.
+        sample_values:
+          - WOM-4267
+          - WOM-3571
+          - MEN-2988
+        synonyms:
+          - product_code
+          - item_id
+          - product_number
+          - sku
+          - product_key
+          - item_key
+          - product_identifier
+          - code produit
+          - référence produit
+          - code article
+          - numéro de produit
+          - identifiant produit
+          - identifiant article
+          - numéro d'article
+          - référence article
+          - code article
+          - clé d'article
+          - référence produit
+          - code SKU
+          - unité de gestion de stock
+          - code article
+          - identifiant produit
+          - clé produit
+          - code produit
+          - identifiant produit
+          - numéro de série produit
+          - code d'activation produit
+          - clé article
+          - identifiant article
+          - code article
+          - numéro de série article
+          - code d'identification article
+    facts:
+      - name: STAR_RATING
+        expr: STAR_RATING
+        data_type: NUMBER(38,1)
+        description: The average customer rating of a product, based on a scale of 1 to 5, with 1 being the lowest and 5 being the highest, indicating the overall satisfaction of customers with the product.
+        sample_values:
+          - '4.4'
+          - '4.5'
+          - '4.6'
+        synonyms:
+          - rating
+          - review_score
+          - product_rating
+          - score
+          - evaluation
+          - grade
+          - ranking
+      - name: NUMBER_OF_REVIEWS
+        expr: NUMBER_OF_REVIEWS
+        data_type: NUMBER(38,0)
+        description: The total number of customer reviews received for a specific product in the sports product catalogue.
+        sample_values:
+          - '3101'
+          - '7367'
+          - '3798'
+        synonyms:
+          - total_reviews
+          - review_count
+          - number_of_ratings
+          - total_ratings
+          - review_total
+          - rating_count
+      - name: MRP
+        expr: MRP
+        data_type: NUMBER(38,2)
+        description: The Maximum Retail Price (MRP) of a sports product, representing the highest price at which the product can be sold to the end customer.
+        sample_values:
+          - '9.99'
+          - '39.99'
+          - '24.99'
+        synonyms:
+          - list_price
+          - retail_price
+          - marked_price
+          - sticker_price
+          - original_price
+          - base_price
+          - standard_price
+    primary_key:
+      columns:
+        - PRODUCTID
+  - name: CRM_INDEXED_AGGREGATED
+    base_table:
+      database: SPORTS_DB
+      schema: SPORTS_TRANSFORMATION
+      table: CRM_INDEXED_AGGREGATED
+    dimensions:
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        data_type: VARCHAR(16777216)
+        description: Unique identifier for a customer in the CRM system.
+        sample_values:
+          - b2cf5041-b241-460c-abeb-dac62818bb63
+          - 1b14f53b-4939-45cc-969b-d37206683db2
+          - 6e62d17d-48cd-498d-af86-74848d8c5be8
+        synonyms:
+          - client_id
+          - customer_number
+          - account_id
+          - user_id
+          - patron_id
+          - client_number
+          - account_number
+          - identifiant client
+          - ID client
+          - code client
+          - numéro d'identification client
+          - clé client
+          - numéro client
+          - numéro de client
+          - code client
+          - identifiant client
+          - matricule client
+          - identifiant de compte
+          - ID de compte
+          - numéro de compte
+          - code de compte
+          - clé de compte
+          - identifiant utilisateur
+          - ID utilisateur
+          - numéro d'utilisateur
+          - code utilisateur
+          - clé utilisateur
+          - identifiant adhérent
+          - numéro d'adhérent
+          - code adhérent
+          - identifiant membre
+          - numéro de membre
+          - numéro client
+          - code client
+          - identifiant client
+          - matricule client
+          - numéro de référence client
+          - numéro de compte
+          - code de compte
+          - identifiant de compte
+          - référence de compte
+          - matricule de compte
+      - name: FIRST_NAME
+        expr: FIRST_NAME
+        data_type: VARCHAR(16777216)
+        description: The first name of the customer or contact.
+        sample_values:
+          - Emmanuelle
+          - Christelle
+          - Agathe
+        synonyms:
+          - given_name
+          - first_name
+          - forename
+          - personal_name
+          - christian_name
+          - baptismal_name
+          - prénom
+          - prénom usuel
+          - nom personnel
+          - premier prénom
+          - nom individuel
+      - name: LAST_NAME
+        expr: LAST_NAME
+        data_type: VARCHAR(16777216)
+        description: The customer's last name.
+        sample_values:
+          - Rivière
+          - Coulon
+          - Poulain
+        synonyms:
+          - surname
+          - family_name
+          - last_name_field
+          - full_last_name
+          - person_last_name
+          - customer_last_name
+          - user_last_name
+          - nom de famille
+          - patronyme
+          - nom
+          - champ nom de famille
+          - nom de famille complet
+          - patronyme complet
+          - nom complet
+          - nom de famille du client
+          - patronyme du client
+          - nom du client
+      - name: EMAIL
+        expr: EMAIL
+        data_type: VARCHAR(16777216)
+        description: The email address of the customer or contact.
+        sample_values:
+          - bernard02@example.org
+          - clemencelemaire@example.org
+          - grosastrid@example.org
+        synonyms:
+          - email_address
+          - contact_email
+          - customer_email
+          - user_email
+          - electronic_mail
+          - mail_address
+          - adresse e-mail
+          - adresse courriel
+          - adresse électronique
+          - adresse mail
+          - adresse e-mail de contact
+          - courriel de contact
+          - adresse électronique de contact
+          - mail de contact
+          - adresse e-mail client
+          - courriel client
+          - adresse électronique client
+          - mail client
+          - adresse e-mail utilisateur
+          - courriel utilisateur
+          - adresse électronique utilisateur
+          - mail utilisateur
+      - name: PREFERRED_STORE
+        expr: PREFERRED_STORE
+        data_type: VARCHAR(16777216)
+        description: The preferred store location associated with a customer.
+        sample_values:
+          - P29200B
+          - M73320T
+          - M74340S
+        synonyms:
+          - favourite_store
+          - preferred_location
+          - go_to_store
+          - regular_store
+          - usual_store
+          - favourite_location
+          - store_of_choice
+          - magasin préféré
+          - boutique favorite
+          - commerce préféré
+          - magasin de prédilection
+          - emplacement préféré
+          - lieu préféré
+          - localisation préférée
+          - endroit favori
+          - magasin de référence
+          - magasin habituel
+          - magasin de prédilection
+          - magasin favori
+          - magasin de choix
+          - magasin préféré
+          - boutique de prédilection
+          - commerce choisi
+      - name: MARKETING_OPT_IN
+        expr: MARKETING_OPT_IN
+        data_type: BOOLEAN
+        description: Indicates whether a customer has opted-in to receive marketing communications.
+        sample_values:
+          - 'FALSE'
+          - 'TRUE'
+        synonyms:
+          - opt_in_for_marketing
+          - marketing_permission
+          - marketing_consent
+          - allow_marketing
+          - receive_marketing
+          - marketing_subscription
+          - opt_in_status
+          - inscription au marketing
+          - consentement marketing
+          - choix de recevoir du marketing
+          - acceptation du marketing
+          - autorisation marketing
+          - consentement marketing
+          - permission de marketing
+          - accord marketing
+          - consentement marketing
+          - accord marketing
+          - autorisation marketing
+          - approbation marketing
+          - recevoir des offres marketing
+          - recevoir des communications marketing
+          - recevoir des informations marketing
+          - abonnement marketing
+          - souscription marketing
+          - statut d'inscription
+          - état du consentement marketing
+          - statut d'autorisation marketing
+          - état de l'acceptation marketing
+    time_dimensions:
+      - name: REGISTRATION_DATE
+        expr: REGISTRATION_DATE
+        data_type: DATE
+        description: Date when a customer or account was first registered in the system.
+        sample_values:
+          - '2004-01-26'
+          - '2016-01-16'
+          - '2013-01-15'
+        synonyms:
+          - enrollment_date
+          - sign_up_date
+          - join_date
+          - membership_date
+          - account_creation_date
+          - user_creation_date
+          - onboarding_date
+      - name: LAST_PURCHASE_DATE
+        expr: LAST_PURCHASE_DATE
+        data_type: DATE
+        description: The date of the customer's most recent purchase.
+        sample_values:
+          - '2024-08-07'
+          - '2024-08-01'
+          - '2024-12-19'
+        synonyms:
+          - most_recent_purchase_date
+          - latest_purchase_date
+          - recent_purchase_date
+          - last_transaction_date
+          - date_of_last_purchase
+          - most_current_purchase_date
+    facts:
+      - name: NUMBER_OF_PURCHASES
+        expr: NUMBER_OF_PURCHASES
+        data_type: NUMBER(18,0)
+        description: The total number of purchases made by a customer.
+        sample_values:
+          - '1'
+          - '0'
+          - '2'
+        synonyms:
+          - purchase_count
+          - total_purchases
+          - number_of_transactions
+          - purchase_frequency
+          - transaction_count
+          - total_orders
+      - name: TOTAL_PURCHASE_VALUE
+        expr: TOTAL_PURCHASE_VALUE
+        data_type: FLOAT
+        description: The total monetary value of all purchases made by a customer.
+        sample_values:
+          - '320'
+          - '60'
+          - '49.99'
+        synonyms:
+          - total_spent
+          - total_amount_paid
+          - total_expenditure
+          - total_revenue
+          - total_sales_value
+          - total_transaction_value
+          - cumulative_purchase_value
+          - overall_purchase_amount
+    primary_key:
+      columns:
+        - CUSTOMER_ID
+relationships:
+  - name: Instore customer relationship
+    left_table: INSTORE_SALES_DATA_CRM3
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+    right_table: CRM_INDEXED_AGGREGATED
+    join_type: left_outer
+    relationship_type: many_to_one
+  - name: instore product relationship
+    join_type: left_outer
+    relationship_type: many_to_one
+    left_table: INSTORE_SALES_DATA_CRM3
+    relationship_columns:
+      - left_column: PRODUCT_ID
+        right_column: PRODUCTID
+    right_table: SPORTS_PRODUCT_CATALOGUE
+verified_queries:
+  - name: Top 10 des marques
+    question: Donne moi le top 10 des marques les plus vendues en 2024
+    use_as_onboarding_question: false
+    sql: WITH sales_2024 AS (SELECT spc.brand, SUM(isdc.sales_price_euro) AS total_sales FROM instore_sales_data_crm3 AS isdc LEFT OUTER JOIN sports_product_catalogue AS spc ON isdc.product_id = spc.productid WHERE DATE_TRUNC('YEAR', isdc.sale_date) = '2024-01-01' GROUP BY spc.brand), ranked_sales AS (SELECT brand, total_sales, RANK() OVER (ORDER BY total_sales DESC NULLS LAST) AS rnk FROM sales_2024) SELECT brand, total_sales FROM ranked_sales WHERE rnk <= 10 ORDER BY total_sales DESC NULLS LAST
+    verified_by: THOMAS
+    verified_at: 1742893258
+  - name: produits de la marque Adidas de couleur noire
+    question: Quels sont les produits de la marque Adidas de couleur noire ?
+    use_as_onboarding_question: false
+    sql: SELECT spc.product_name, spc.productid, spc.colour, spc.brand FROM sports_product_catalogue AS spc WHERE spc.colour = 'Black' AND spc.brand = 'Adidas'
+    verified_by: THOMAS
+    verified_at: 1742893644
+  - name: produit salomon différent
+    question: Combien y-a-t-il de produits distincts de la marque Salomon dans le catalogue ?
+    use_as_onboarding_question: false
+    sql: SELECT COUNT(DISTINCT spc.productid) AS distinct_product_count FROM sports_product_catalogue AS spc WHERE spc.brand = 'Salomon' /* Generated by Cortex Analyst */
+    verified_by: THOMAS
+    verified_at: 1742894854
+  - name: Classement des magasins par ventes desc
+    question: 'Peux tu classer les différents magasins par ordre décroissant du total des ventes ? '
+    use_as_onboarding_question: false
+    sql: WITH store_sales AS (SELECT storeid, store_name, SUM(sales_price_euro) AS total_sales FROM instore_sales_data_crm3 GROUP BY storeid, store_name) SELECT storeid, store_name, total_sales, RANK() OVER (ORDER BY total_sales DESC NULLS LAST) AS store_rank FROM store_sales ORDER BY store_rank
+    verified_by: THOMAS
+    verified_at: 1742894515

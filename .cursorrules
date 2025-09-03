@@ -1,0 +1,142 @@
+# Cursor Rules for Snowflake Streamlit Development
+# Comprehensive guidelines learned from building Summit Sports Reviews Analytics
+
+## SNOWFLAKE STREAMLIT SPECIFIC RULES
+
+### 1. Environment and Dependencies
+- NEVER use `if __name__ == "__main__":` blocks in Snowflake Streamlit apps
+- Call main() function directly at the end of the file
+- Use only supported Anaconda channels in environment.yml: `snowflake`, `nodefaults`
+- NEVER use `conda-forge`, `pyviz` or other unsupported channels
+- Keep dependency names lowercase with no version constraints in environment.yml
+- Dependencies: streamlit, pandas, plotly, snowflake-snowpark-python (no versions needed)
+
+### 2. Schema and Database Handling
+- NEVER use USE SCHEMA statements in Snowflake Streamlit (unsupported)
+- Always use fully qualified table names: `SCHEMA.TABLE_NAME`
+- Create schemas with simple names without database prefixes: `CREATE SCHEMA IF NOT EXISTS SCHEMA_NAME`
+- When using write_pandas(), specify schema parameter explicitly
+- Convert DataFrame column names to uppercase to match Snowflake conventions: `df.columns = df.columns.str.upper()`
+
+### 3. Session Management and Error Handling
+- NEVER use st.stop() immediately on connection errors
+- Always check if session is None before using it
+- Return None from connection functions instead of stopping execution
+- Implement graceful degradation when services are unavailable
+- Use try-catch blocks around every Snowflake operation
+- Provide meaningful error messages to users, not technical details
+- Log technical details in expandable sections for debugging
+
+### 4. AI_AGG Function Usage
+- NEVER execute AI_AGG queries automatically on page load (causes UI hangs)
+- NEVER execute multiple AI_AGG queries sequentially without error handling
+- Use manual triggers (buttons) to initiate AI_AGG operations
+- Execute AI_AGG queries individually with separate try-catch blocks
+- Limit data size with LIMIT clause for faster processing (e.g., LIMIT 100)
+- Use simple, focused prompts to reduce processing time
+- Provide fallback messages when AI queries fail
+- Use descriptive prompts that specify the data context and desired output format
+- Break complex analysis into multiple focused queries rather than one complex query
+- Handle empty result sets gracefully from AI_AGG functions
+
+### 5. Streamlit UI/UX Best Practices
+- NEVER use st.rerun() after successful operations (causes infinite loops)
+- NEVER auto-execute expensive operations on tab load (causes UI hangs)
+- Use manual triggers (buttons) for AI_AGG and other slow operations
+- Use progress indicators and spinners appropriately
+- Replace st.spinner with st.empty() placeholders for better control
+- Avoid complex HTML rendering in st.markdown() - use st.write() for dynamic content
+- Provide clear user guidance when data is missing
+- Use st.columns() for responsive layouts
+- Implement file upload widgets with proper validation
+- Show progress during long-running operations
+
+### 6. Data Validation and Processing
+- Always validate DataFrame is not None or empty before processing
+- Check for required columns before uploading to Snowflake
+- Validate file formats and structure before processing
+- Handle missing or malformed data gracefully
+- Provide specific error messages for data validation failures
+- Use explicit date formats when parsing dates: pd.to_datetime(col, format='%d/%m/%Y', errors='coerce')
+- Handle date format mismatches gracefully with errors='coerce'
+
+### 7. Performance and Stability
+- Avoid blocking operations in the main thread
+- Use individual error handling for each database operation
+- Provide partial results when some operations fail
+- Cache expensive operations when appropriate
+- Handle timeouts and connection issues gracefully
+
+## GENERAL STREAMLIT RULES
+
+### 8. State Management
+- Use session state for persistent data across reruns
+- Avoid unnecessary st.rerun() calls
+- Clear progress indicators after operations complete
+- Handle widget state changes properly
+
+### 9. Security and Best Practices
+- Never expose connection strings or credentials in code
+- Use environment variables for sensitive configuration
+- Validate all user inputs before processing
+- Sanitize data before database operations
+
+### 10. Code Organization
+- Keep functions focused and single-purpose
+- Use descriptive function and variable names
+- Group related functionality together
+- Separate UI logic from business logic
+- Add comprehensive error handling to all functions
+
+## DEBUGGING AND TROUBLESHOOTING
+
+### 11. Common Issues and Solutions
+- Column name mismatches: Convert to uppercase before upload
+- Date parsing errors: Use explicit format pd.to_datetime(col, format='%d/%m/%Y', errors='coerce')
+- Session stopping: Remove st.stop() calls, use graceful returns
+- Infinite restarts: Remove st.rerun() from success handlers
+- UI hanging on tab load: Use manual triggers for expensive operations like AI_AGG
+- Hanging spinners: Use individual error handling for long operations
+- "Starting session" stuck: Remove wrapper functions, use get_active_session() directly
+- App shows "starting up" in Snowsight: Avoid auto-executing AI_AGG on page load
+- Schema errors: Use fully qualified names, avoid USE statements
+- Dependency errors: Use only supported Anaconda channels
+
+### 12. Error Reporting
+- Show user-friendly messages for common errors
+- Provide technical details in collapsible sections
+- Log errors properly for debugging
+- Give actionable guidance on how to resolve issues
+
+## AI AND DATA ANALYSIS
+
+### 13. AI_AGG Best Practices
+- Use specific, context-aware prompts
+- Handle failures gracefully with fallback text
+- Execute queries individually to isolate failures
+- Provide meaningful descriptions in error messages
+- Consider query complexity and potential timeouts
+
+### 14. Data Visualization
+- Use Plotly for interactive charts
+- Implement responsive design with proper column layouts
+- Provide meaningful chart titles and labels
+- Handle empty datasets in visualizations
+- Use appropriate color schemes and styling
+
+## DEPLOYMENT AND MAINTENANCE
+
+### 15. Production Readiness
+- Implement comprehensive error handling
+- Provide clear user instructions
+- Test with various data sizes and formats
+- Ensure graceful degradation of features
+- Document setup and configuration requirements
+
+### 16. Monitoring and Logging
+- Log important operations and errors
+- Provide debugging information when needed
+- Monitor performance of long-running operations
+- Track user interactions and success rates
+
+Remember: Snowflake Streamlit has specific limitations and requirements that differ from standard Streamlit deployments. Always test thoroughly in the target environment. 
