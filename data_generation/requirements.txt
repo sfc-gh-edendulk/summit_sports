@@ -1,0 +1,20 @@
+# Data Generation Project Dependencies
+# These are in addition to the main project dependencies
+
+# Data generation and manipulation
+faker>=20.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Database connections
+snowflake-connector-python>=3.0.0
+snowflake-snowpark-python>=1.11.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+tqdm>=4.65.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
