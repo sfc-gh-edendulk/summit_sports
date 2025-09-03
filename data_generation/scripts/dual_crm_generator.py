@@ -476,6 +476,24 @@ def main(session: snowpark.Session) -> snowpark.DataFrame:
     return session.create_dataframe(sample_pdf)
 
 
+def run(session: snowpark.Session, crocevia_rows: int = 10000, summit_rows: int = 5000) -> snowpark.DataFrame:
+    """
+    Parameterized entrypoint for stored procedure calls to enable small test runs.
+    """
+    print("Starting dual CRM generation (parameterized run)...")
+    print(f"Target Crocevia rows: {crocevia_rows:,}")
+    print(f"Target Summit Sports rows: {summit_rows:,}")
+
+    generate_crocevia(session, crocevia_rows)
+    generate_summit(session, summit_rows)
+
+    sample_query = f"""
+        SELECT 'CROCEVIA' AS SOURCE, * FROM {CROCEVIA_TABLE} SAMPLE ROW (100) UNION ALL
+        SELECT 'SUMMIT' AS SOURCE, * FROM {SUMMIT_TABLE}  SAMPLE ROW (100)
+    """
+    sample_pdf = session.sql(sample_query).to_pandas()
+    return session.create_dataframe(sample_pdf)
+
 # Note: This script follows the pattern of other generators (main(session) entrypoint).
 # It intentionally avoids a __main__ entrypoint to be compatible with Snowpark handler use.
 
