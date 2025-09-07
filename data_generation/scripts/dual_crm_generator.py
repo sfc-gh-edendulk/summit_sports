@@ -455,7 +455,9 @@ def generate_summit(session: snowpark.Session, total_rows: int) -> None:
             pass
 
         # Retry sampling a few times in case table creation has just completed
-        crocevia_pool: pd.DataFrame
+        crocevia_pool: pd.DataFrame = pd.DataFrame(
+            columns=["FIRST_NAME", "LAST_NAME", "BIRTH_DATE", "PHONE", "EMAIL", "STREET", "POSTAL_CODE"]
+        )
         for attempt in range(3):
             try:
                 exists_df = session.sql(
@@ -481,7 +483,8 @@ def generate_summit(session: snowpark.Session, total_rows: int) -> None:
                 break
             except Exception:
                 if attempt == 2:
-                    raise
+                    # If we cannot sample (e.g., table not visible yet), continue without overlap for this batch
+                    break
                 time.sleep(1.0)
 
         overlapped_df = _apply_overlap_to_summit_batch(
