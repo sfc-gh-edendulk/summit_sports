@@ -29,6 +29,7 @@ import math
 import random
 import string
 from dataclasses import dataclass
+import time
 from typing import List, Tuple, Dict, Optional
 
 import numpy as np
@@ -445,13 +446,43 @@ def generate_summit(session: snowpark.Session, total_rows: int) -> None:
 
         # Sample a Crocevia pool from Snowflake for overlap application
         pool_size = int(batch * SUMMIT_OVERLAP_RATIO * 1.2)  # slightly larger pool for randomness
-        pool_query = f"""
-            SELECT FIRST_NAME, LAST_NAME, BIRTH_DATE, PHONE, EMAIL, STREET, POSTAL_CODE
-            FROM {CROCEVIA_TABLE}
-            ORDER BY RANDOM()
-            LIMIT {pool_size}
-        """
-        crocevia_pool = session.sql(pool_query).to_pandas()
+
+        # Ensure context and table existence before sampling
+        try:
+            session.sql("USE DATABASE SS_101").collect()
+            session.sql("USE SCHEMA SS_101.SOURCE_DATA").collect()
+        except Exception:
+            pass
+
+        # Retry sampling a few times in case table creation has just completed
+        crocevia_pool: pd.DataFrame
+        for attempt in range(3):
+            try:
+                exists_df = session.sql(
+                    """
+                    SELECT COUNT(*) AS C
+                    FROM SS_101.INFORMATION_SCHEMA.TABLES
+                    WHERE TABLE_SCHEMA = 'SOURCE_DATA' AND TABLE_NAME = 'CROCEVIA_CRM'
+                    """
+                ).to_pandas()
+                exists = int(exists_df.iloc[0]["C"]) > 0
+                if not exists:
+                    # Table not visible yet
+                    time.sleep(1.0)
+                    continue
+
+                pool_query = f"""
+                    SELECT FIRST_NAME, LAST_NAME, BIRTH_DATE, PHONE, EMAIL, STREET, POSTAL_CODE
+                    FROM {CROCEVIA_TABLE}
+                    ORDER BY RANDOM()
+                    LIMIT {pool_size}
+                """
+                crocevia_pool = session.sql(pool_query).to_pandas()
+                break
+            except Exception:
+                if attempt == 2:
+                    raise
+                time.sleep(1.0)
 
         overlapped_df = _apply_overlap_to_summit_batch(
             base_df, crocevia_pool, overlap_ratio=SUMMIT_OVERLAP_RATIO, plan=plan
@@ -464,6 +495,12 @@ def generate_summit(session: snowpark.Session, total_rows: int) -> None:
 
 
 def main(session: snowpark.Session) -> snowpark.DataFrame:
+    # Ensure context for all operations
+    try:
+        session.sql("USE DATABASE SS_101").collect()
+        session.sql("USE SCHEMA SS_101.SOURCE_DATA").collect()
+    except Exception:
+        pass
     print("Starting dual CRM generation...")
     print(f"Target Crocevia rows: {TARGET_ROWS_CROCEVIA:,}")
     print(f"Target Summit Sports rows: {TARGET_ROWS_SUMMIT:,}")
@@ -487,6 +524,12 @@ def run(session: snowpark.Session, crocevia_rows: int = 10000, summit_rows: int 
     """
     Parameterized entrypoint for stored procedure calls to enable small test runs.
     """
+    # Ensure context for all operations
+    try:
+        session.sql("USE DATABASE SS_101").collect()
+        session.sql("USE SCHEMA SS_101.SOURCE_DATA").collect()
+    except Exception:
+        pass
     print("Starting dual CRM generation (parameterized run)...")
     print(f"Target Crocevia rows: {crocevia_rows:,}")
     print(f"Target Summit Sports rows: {summit_rows:,}")
