@@ -412,9 +412,19 @@ def _write_batch(
     except Exception:
         # Proceed anyway; if context is already correct this will be fine
         pass
+    # Decompose FQN into database, schema, and table name to avoid quoting issues
+    # Expected format: DB.SCHEMA.TABLE
+    try:
+        db, sch, tbl = table_fqn.split(".")
+    except ValueError:
+        # Fallback if not FQN
+        db, sch, tbl = "SS_101", "SOURCE_DATA", table_fqn
+
     session.write_pandas(
         df,
-        table_fqn,
+        tbl,
+        database=db,
+        schema=sch,
         auto_create_table=True,
         overwrite=first_batch,
     )
