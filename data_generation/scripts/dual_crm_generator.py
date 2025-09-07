@@ -35,6 +35,13 @@ from typing import List, Tuple, Dict, Optional
 import numpy as np
 import pandas as pd
 import snowflake.snowpark as snowpark
+from snowflake.snowpark.types import (
+    StructType,
+    StructField,
+    StringType,
+    DateType,
+    DoubleType,
+)
 
 
 # ----------------------------- Configuration -----------------------------
@@ -415,6 +422,23 @@ def _write_batch(
 
 # ------------------------------ Orchestration ----------------------------
 
+def _return_schema() -> StructType:
+    return StructType([
+        StructField("SOURCE", StringType()),
+        StructField("CUSTOMER_ID", StringType()),
+        StructField("FIRST_NAME", StringType()),
+        StructField("LAST_NAME", StringType()),
+        StructField("GENDER", StringType()),
+        StructField("BIRTH_DATE", DateType()),
+        StructField("EMAIL", StringType()),
+        StructField("PHONE", StringType()),
+        StructField("STREET", StringType()),
+        StructField("POSTAL_CODE", StringType()),
+        StructField("LATITUDE", DoubleType()),
+        StructField("LONGITUDE", DoubleType()),
+        StructField("OVERLAP_TYPE", StringType()),
+    ])
+
 def generate_crocevia(session: snowpark.Session, total_rows: int) -> None:
     first_batch = True
     generated = 0
@@ -551,11 +575,18 @@ def main(session: snowpark.Session) -> snowpark.DataFrame:
     except Exception:
         pass
 
+    schema = _return_schema()
     if parts:
         sample_pdf = pd.concat(parts, ignore_index=True)
+        # Ensure columns order and presence
+        for col in [f.name for f in schema.fields]:
+            if col not in sample_pdf.columns:
+                sample_pdf[col] = None
+        sample_pdf = sample_pdf[[f.name for f in schema.fields]]
+        return session.create_dataframe(sample_pdf, schema=schema)
     else:
-        sample_pdf = pd.DataFrame()
-    return session.create_dataframe(sample_pdf)
+        # Return empty DF with schema
+        return session.create_dataframe([], schema=schema)
 
 
 def run(session: snowpark.Session, crocevia_rows: int = 10000, summit_rows: int = 5000) -> snowpark.DataFrame:
@@ -605,11 +636,18 @@ def run(session: snowpark.Session, crocevia_rows: int = 10000, summit_rows: int 
     except Exception:
         pass
 
+    schema = _return_schema()
     if parts:
         sample_pdf = pd.concat(parts, ignore_index=True)
+        # Ensure columns order and presence
+        for col in [f.name for f in schema.fields]:
+            if col not in sample_pdf.columns:
+                sample_pdf[col] = None
+        sample_pdf = sample_pdf[[f.name for f in schema.fields]]
+        return session.create_dataframe(sample_pdf, schema=schema)
     else:
-        sample_pdf = pd.DataFrame()
-    return session.create_dataframe(sample_pdf)
+        # Return empty DF with schema
+        return session.create_dataframe([], schema=schema)
 
 # Note: This script follows the pattern of other generators (main(session) entrypoint).
 # It intentionally avoids a __main__ entrypoint to be compatible with Snowpark handler use.
