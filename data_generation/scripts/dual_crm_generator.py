@@ -588,6 +588,8 @@ def main(session: snowpark.Session) -> snowpark.DataFrame:
     schema = _return_schema()
     if parts:
         sample_pdf = pd.concat(parts, ignore_index=True)
+        # Remove duplicate columns (can happen when UNION ALL creates duplicates)
+        sample_pdf = sample_pdf.loc[:, ~sample_pdf.columns.duplicated()]
         # Ensure columns order and presence
         for col in [f.name for f in schema.fields]:
             if col not in sample_pdf.columns:
@@ -649,6 +651,8 @@ def run(session: snowpark.Session, crocevia_rows: int = 10000, summit_rows: int 
     schema = _return_schema()
     if parts:
         sample_pdf = pd.concat(parts, ignore_index=True)
+        # Remove duplicate columns (can happen when UNION ALL creates duplicates)
+        sample_pdf = sample_pdf.loc[:, ~sample_pdf.columns.duplicated()]
         # Ensure columns order and presence
         for col in [f.name for f in schema.fields]:
             if col not in sample_pdf.columns:
