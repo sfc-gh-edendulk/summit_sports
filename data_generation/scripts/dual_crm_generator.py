@@ -514,12 +514,47 @@ def main(session: snowpark.Session) -> snowpark.DataFrame:
     print("Generating Summit Sports CRM with overlaps...")
     generate_summit(session, TARGET_ROWS_SUMMIT)
 
-    print("Generation complete. Returning sample from both tables...")
-    sample_query = f"""
-        SELECT 'CROCEVIA' AS SOURCE, * FROM {CROCEVIA_TABLE} SAMPLE ROW (100) UNION ALL
-        SELECT 'SUMMIT' AS SOURCE, * FROM {SUMMIT_TABLE}  SAMPLE ROW (100)
-    """
-    sample_pdf = session.sql(sample_query).to_pandas()
+    print("Generation complete. Returning sample from available tables...")
+    try:
+        session.sql("USE DATABASE SS_101").collect()
+        session.sql("USE SCHEMA SS_101.SOURCE_DATA").collect()
+    except Exception:
+        pass
+
+    parts: list[pd.DataFrame] = []
+    try:
+        exists_df = session.sql(
+            """
+            SELECT COUNT(*) AS C
+            FROM SS_101.INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'SOURCE_DATA' AND TABLE_NAME = 'CROCEVIA_CRM'
+            """
+        ).to_pandas()
+        if int(exists_df.iloc[0]["C"]) > 0:
+            parts.append(
+                session.sql(f"SELECT 'CROCEVIA' AS SOURCE, * FROM {CROCEVIA_TABLE} SAMPLE ROW (100)").to_pandas()
+            )
+    except Exception:
+        pass
+    try:
+        exists_df = session.sql(
+            """
+            SELECT COUNT(*) AS C
+            FROM SS_101.INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'SOURCE_DATA' AND TABLE_NAME = 'SUMMIT_SPORTS_CRM'
+            """
+        ).to_pandas()
+        if int(exists_df.iloc[0]["C"]) > 0:
+            parts.append(
+                session.sql(f"SELECT 'SUMMIT' AS SOURCE, * FROM {SUMMIT_TABLE} SAMPLE ROW (100)").to_pandas()
+            )
+    except Exception:
+        pass
+
+    if parts:
+        sample_pdf = pd.concat(parts, ignore_index=True)
+    else:
+        sample_pdf = pd.DataFrame()
     return session.create_dataframe(sample_pdf)
 
 
@@ -540,11 +575,40 @@ def run(session: snowpark.Session, crocevia_rows: int = 10000, summit_rows: int 
     generate_crocevia(session, crocevia_rows)
     generate_summit(session, summit_rows)
 
-    sample_query = f"""
-        SELECT 'CROCEVIA' AS SOURCE, * FROM {CROCEVIA_TABLE} SAMPLE ROW (100) UNION ALL
-        SELECT 'SUMMIT' AS SOURCE, * FROM {SUMMIT_TABLE}  SAMPLE ROW (100)
-    """
-    sample_pdf = session.sql(sample_query).to_pandas()
+    parts: list[pd.DataFrame] = []
+    try:
+        exists_df = session.sql(
+            """
+            SELECT COUNT(*) AS C
+            FROM SS_101.INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'SOURCE_DATA' AND TABLE_NAME = 'CROCEVIA_CRM'
+            """
+        ).to_pandas()
+        if int(exists_df.iloc[0]["C"]) > 0:
+            parts.append(
+                session.sql(f"SELECT 'CROCEVIA' AS SOURCE, * FROM {CROCEVIA_TABLE} SAMPLE ROW (100)").to_pandas()
+            )
+    except Exception:
+        pass
+    try:
+        exists_df = session.sql(
+            """
+            SELECT COUNT(*) AS C
+            FROM SS_101.INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = 'SOURCE_DATA' AND TABLE_NAME = 'SUMMIT_SPORTS_CRM'
+            """
+        ).to_pandas()
+        if int(exists_df.iloc[0]["C"]) > 0:
+            parts.append(
+                session.sql(f"SELECT 'SUMMIT' AS SOURCE, * FROM {SUMMIT_TABLE} SAMPLE ROW (100)").to_pandas()
+            )
+    except Exception:
+        pass
+
+    if parts:
+        sample_pdf = pd.concat(parts, ignore_index=True)
+    else:
+        sample_pdf = pd.DataFrame()
     return session.create_dataframe(sample_pdf)
 
 # Note: This script follows the pattern of other generators (main(session) entrypoint).
