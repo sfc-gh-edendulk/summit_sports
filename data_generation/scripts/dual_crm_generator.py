@@ -397,6 +397,13 @@ def _write_batch(
 ):
     # Ensure uppercase columns for Snowflake compatibility
     df.columns = df.columns.str.upper()
+    # Ensure context is set to avoid temp stage errors when write_pandas creates a TEMP STAGE
+    try:
+        session.sql("USE DATABASE SS_101").collect()
+        session.sql("USE SCHEMA SS_101.SOURCE_DATA").collect()
+    except Exception:
+        # Proceed anyway; if context is already correct this will be fine
+        pass
     session.write_pandas(
         df,
         table_fqn,
