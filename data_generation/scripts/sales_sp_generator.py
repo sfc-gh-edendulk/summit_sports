@@ -18,7 +18,7 @@ Inputs in Snowflake:
 
 Entrypoints:
 - main(session)  -> full 2021-2024 generation
-- run(session, start_year, end_year) -> parameterized range
+- run(session, start_year, end_year, start_month=None, end_month=None) -> parameterized range (optionally month-bounded)
 
 Returns: A small sample Snowpark DataFrame of generated sales (up to 100 rows)
 """
@@ -237,15 +237,17 @@ def _write_batch(session: snowpark.Session, df: pd.DataFrame, first_batch: bool)
     )
 
 
-def _month_iter(start_year: int, end_year: int) -> List[Tuple[int, int]]:
+def _month_iter(start_year: int, end_year: int, start_month: int | None = None, end_month: int | None = None) -> List[Tuple[int, int]]:
     months: List[Tuple[int, int]] = []
     for y in range(start_year, end_year + 1):
-        for m in range(1, 13):
+        m_start = start_month if (start_month and y == start_year) else 1
+        m_end = end_month if (end_month and y == end_year) else 12
+        for m in range(m_start, m_end + 1):
             months.append((y, m))
     return months
 
 
-def generate_sales(session: snowpark.Session, start_year: int, end_year: int) -> None:
+def generate_sales(session: snowpark.Session, start_year: int, end_year: int, start_month: int | None = None, end_month: int | None = None) -> None:
     _ensure_context(session)
     rng = np.random.default_rng(42)
 
@@ -258,7 +260,7 @@ def generate_sales(session: snowpark.Session, start_year: int, end_year: int) ->
     products, stores, customers = _fetch_dimension_lists(session)
 
     first_batch = True
-    for year, month in _month_iter(start_year, end_year):
+    for year, month in _month_iter(start_year, end_year, start_month, end_month):
         # Filter days in this month
         mask = (
             (pd.to_datetime(daily_targets["DATE"]).dt.year == year) &
@@ -292,10 +294,15 @@ def main(session: snowpark.Session) -> snowpark.DataFrame:
     return _return_sample(session)
 
 
-def run(session: snowpark.Session, start_year: int = 2021, end_year: int = 2024) -> snowpark.DataFrame:
+def run(session: snowpark.Session, start_year: int = 2021, end_year: int = 2024, start_month: int | None = None, end_month: int | None = None) -> snowpark.DataFrame:
     _ensure_context(session)
     print(f"Starting Summit Sports Sales generation ({start_year}-{end_year})...")
-    generate_sales(session, start_year, end_year)
+    # Basic validation for month bounds if provided
+    if start_month is not None and (start_month < 1 or start_month > 12):
+        start_month = None
+    if end_month is not None and (end_month < 1 or end_month > 12):
+        end_month = None
+    generate_sales(session, start_year, end_year, start_month, end_month)
     return _return_sample(session)
 
 
