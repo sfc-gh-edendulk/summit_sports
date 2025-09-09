@@ -123,13 +123,50 @@ def _read_stock_index(session: snowpark.Session, start_date: str, end_date: str)
     return merged[["DATE", "INDEX"]]
 
 
-def _year_targets() -> Dict[int, float]:
-    return {y: TARGET_SHARE * v for y, v in REFERENCE_ANNUALS.items()}
+def _year_targets(start_year: int, end_year: int) -> Dict[int, float]:
+    """
+    Build annual targets (EUR) for the requested range.
+    If a year is missing in REFERENCE_ANNUALS, impute from previous year using
+    the average growth rate computed from available consecutive years.
+    """
+    # Compute average growth from known consecutive years
+    known_years = sorted(REFERENCE_ANNUALS.keys())
+    growths: List[float] = []
+    for i in range(len(known_years) - 1):
+        y0, y1 = known_years[i], known_years[i + 1]
+        v0, v1 = REFERENCE_ANNUALS[y0], REFERENCE_ANNUALS[y1]
+        if v0 > 0:
+            growths.append((v1 / v0) - 1.0)
+    avg_growth = float(np.mean(growths)) if growths else 0.0
+
+    # Build a continuous map from the earliest available (or start_year) to end_year
+    first_year = min(known_years + [start_year])
+    series: Dict[int, float] = {}
+
+    # Initialize the first value
+    if first_year in REFERENCE_ANNUALS:
+        series[first_year] = REFERENCE_ANNUALS[first_year]
+    else:
+        # If the requested range starts before the first known year, seed with the first known value
+        # and backward-fill using avg_growth if needed
+        first_known = min(known_years)
+        series[first_year] = REFERENCE_ANNUALS[first_known]
+
+    # Forward-fill through end_year
+    for y in range(first_year + 1, end_year + 1):
+        if y in REFERENCE_ANNUALS:
+            series[y] = REFERENCE_ANNUALS[y]
+        else:
+            prev = series[y - 1]
+            series[y] = prev * (1.0 + avg_growth)
+
+    # Slice to requested window and apply TARGET_SHARE
+    return {y: TARGET_SHARE * series[y] for y in range(start_year, end_year + 1) if y in series}
 
 
 def _build_daily_targets(stock_idx: pd.DataFrame, start_year: int, end_year: int) -> pd.DataFrame:
     """Compute daily revenue targets by distributing annual targets by daily index weights per year."""
-    targets = _year_targets()
+    targets = _year_targets(start_year, end_year)
     df = stock_idx.copy()
     df["YEAR"] = pd.to_datetime(df["DATE"]).dt.year
     df = df[(df["YEAR"] >= start_year) & (df["YEAR"] <= end_year)]
