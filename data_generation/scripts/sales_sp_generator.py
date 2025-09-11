@@ -196,9 +196,16 @@ def _fetch_dimension_lists(session: snowpark.Session) -> Tuple[List[str], List[s
     products = session.sql("SELECT PRODUCT_ID FROM SS_101.SOURCE_DATA.SS_PRODUCTS").to_pandas()["PRODUCT_ID"].astype(str).tolist()
     # Stores
     stores = session.sql("SELECT STOREID FROM SS_101.RAW_POS.SS_STORES").to_pandas()["STOREID"].astype(str).tolist()
-    # Customers
+    # Customers: limit pool to keep memory reasonable
+    customers: List[str] = []
     try:
-        customers = session.sql("SELECT CUSTOMER_ID FROM SS_101.SOURCE_DATA.SUMMIT_SPORTS_CRM").to_pandas()["CUSTOMER_ID"].astype(str).tolist()
+        cnt_df = session.sql("SELECT COUNT(*) AS C FROM SS_101.SOURCE_DATA.SUMMIT_SPORTS_CRM").to_pandas()
+        total = int(cnt_df.iloc[0]["C"]) if not cnt_df.empty else 0
+        sample_n = min(200_000, total)  # cap pool size
+        if sample_n > 0:
+            customers = session.sql(
+                f"SELECT CUSTOMER_ID FROM SS_101.SOURCE_DATA.SUMMIT_SPORTS_CRM ORDER BY RANDOM() LIMIT {sample_n}"
+            ).to_pandas()["CUSTOMER_ID"].astype(str).tolist()
     except Exception:
         customers = []
     return products, stores, customers
@@ -320,31 +327,30 @@ def generate_sales(session: snowpark.Session, start_year: int, end_year: int, st
     products, stores, customers = _fetch_dimension_lists(session)
 
     first_batch = True
-    for year, month in _month_iter(start_year, end_year, start_month, end_month):
-        # Filter days in this month
-        mask = (
-            (pd.to_datetime(daily_targets["DATE"]).dt.year == year) &
-            (pd.to_datetime(daily_targets["DATE"]).dt.month == month)
-        )
-        month_days = daily_targets.loc[mask]
-        if month_days.empty:
+    # Iterate day-by-day (reduces memory; ensures incremental writes and table visible early)
+    daily_targets_sorted = daily_targets.sort_values("DATE")
+    if start_month is not None or end_month is not None:
+        dt = pd.to_datetime(daily_targets_sorted["DATE"])  # convert once
+        if start_month is not None:
+            daily_targets_sorted = daily_targets_sorted[dt.dt.month >= start_month]
+        if end_month is not None:
+            daily_targets_sorted = daily_targets_sorted[dt.dt.month <= end_month]
+
+    for _, row in daily_targets_sorted.iterrows():
+        day = pd.to_datetime(row["DATE"])  # Timestamp
+        year = day.year
+        if year < start_year or year > end_year:
             continue
+        target = float(row["TARGET_EUR"])
 
-        month_rows: List[Dict[str, object]] = []
-        for _, row in month_days.iterrows():
-            day = pd.to_datetime(row["DATE"])  # Timestamp
-            target = float(row["TARGET_EUR"])
-            month_rows.extend(
-                _generate_day_orders(day, target, stores, products, customers, rng)
-            )
-
-        if not month_rows:
+        day_rows = _generate_day_orders(day, target, stores, products, customers, rng)
+        if not day_rows:
             continue
-
-        month_df = pd.DataFrame(month_rows)
-        _write_batch(session, month_df, first_batch)
+        day_df = pd.DataFrame(day_rows)
+        _write_batch(session, day_df, first_batch)
         first_batch = False
-        print(f"Wrote {len(month_df):,} rows for {year}-{month:02d}")
+        # lightweight heartbeat
+        print(f"Wrote {len(day_df):,} rows for {day.date()}")
 
 
 def main(session: snowpark.Session) -> snowpark.DataFrame:
