@@ -191,24 +191,31 @@ def _build_daily_targets(stock_idx: pd.DataFrame, start_year: int, end_year: int
     return out
 
 
-def _fetch_dimension_lists(session: snowpark.Session) -> Tuple[List[str], List[str], List[str]]:
+def _fetch_dimension_lists(session: snowpark.Session) -> Tuple[List[str], List[str]]:
     # Products
     products = session.sql("SELECT PRODUCT_ID FROM SS_101.SOURCE_DATA.SS_PRODUCTS").to_pandas()["PRODUCT_ID"].astype(str).tolist()
     # Stores
     stores = session.sql("SELECT STOREID FROM SS_101.RAW_POS.SS_STORES").to_pandas()["STOREID"].astype(str).tolist()
-    # Customers: limit pool to keep memory reasonable
-    customers: List[str] = []
+    return products, stores
+
+
+def _count_customers(session: snowpark.Session) -> int:
     try:
         cnt_df = session.sql("SELECT COUNT(*) AS C FROM SS_101.SOURCE_DATA.SUMMIT_SPORTS_CRM").to_pandas()
-        total = int(cnt_df.iloc[0]["C"]) if not cnt_df.empty else 0
-        sample_n = min(200_000, total)  # cap pool size
-        if sample_n > 0:
-            customers = session.sql(
-                f"SELECT CUSTOMER_ID FROM SS_101.SOURCE_DATA.SUMMIT_SPORTS_CRM ORDER BY RANDOM() LIMIT {sample_n}"
-            ).to_pandas()["CUSTOMER_ID"].astype(str).tolist()
+        return int(cnt_df.iloc[0]["C"]) if not cnt_df.empty else 0
     except Exception:
-        customers = []
-    return products, stores, customers
+        return 0
+
+
+def _sample_customers_pool(session: snowpark.Session, sample_n: int) -> List[str]:
+    if sample_n <= 0:
+        return []
+    try:
+        return session.sql(
+            f"SELECT CUSTOMER_ID FROM SS_101.SOURCE_DATA.SUMMIT_SPORTS_CRM ORDER BY RANDOM() LIMIT {sample_n}"
+        ).to_pandas()["CUSTOMER_ID"].astype(str).tolist()
+    except Exception:
+        return []
 
 
 def _sample_aov(size: int, rng: np.random.Generator) -> np.ndarray:
@@ -324,7 +331,8 @@ def generate_sales(session: snowpark.Session, start_year: int, end_year: int, st
     stock = _read_stock_index(session, start_date, end_date)
     daily_targets = _build_daily_targets(stock, start_year, end_year)
 
-    products, stores, customers = _fetch_dimension_lists(session)
+    products, stores = _fetch_dimension_lists(session)
+    customers_total = _count_customers(session)
 
     first_batch = True
     # Iterate day-by-day (reduces memory; ensures incremental writes and table visible early)
@@ -342,6 +350,10 @@ def generate_sales(session: snowpark.Session, start_year: int, end_year: int, st
         if year < start_year or year > end_year:
             continue
         target = float(row["TARGET_EUR"])
+
+        # Fresh CRM pool per day (capped)
+        daily_pool_size = min(200_000, customers_total)
+        customers = _sample_customers_pool(session, daily_pool_size)
 
         day_rows = _generate_day_orders(day, target, stores, products, customers, rng)
         if not day_rows:
