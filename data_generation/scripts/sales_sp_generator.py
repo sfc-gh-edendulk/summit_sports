@@ -56,7 +56,7 @@ LOGNORMAL_SIGMA = 0.55  # larger variance
 
 # Order composition
 MIN_ITEMS_PER_ORDER = 1
-MAX_ITEMS_PER_ORDER = 5
+MAX_ITEMS_PER_ORDER = 10
 CUSTOMER_ATTACH_RATE = 0.60  # 60% of orders have customer id
 PAYMENT_METHODS = ["Credit Card", "Debit Card", "Gift Card", "Cash"]
 
@@ -274,6 +274,28 @@ def _write_batch(session: snowpark.Session, df: pd.DataFrame, first_batch: bool)
     )
 
 
+def _ensure_target_table(session: snowpark.Session) -> None:
+    _ensure_context(session)
+    try:
+        session.sql(
+            f"""
+            CREATE TABLE IF NOT EXISTS {WRITE_DB}.{WRITE_SCHEMA}.{TARGET_TABLE} (
+                ORDER_ID STRING,
+                STOREID STRING,
+                SALE_DATE DATE,
+                PRODUCT_ID STRING,
+                QUANTITY NUMBER,
+                SALES_PRICE_EURO FLOAT,
+                PAYMENT_METHOD STRING,
+                CUSTOMER_ID STRING
+            )
+            """
+        ).collect()
+    except Exception:
+        # ignore if creation fails; write_pandas may still create it on first batch
+        pass
+
+
 def _month_iter(start_year: int, end_year: int, start_month: int | None = None, end_month: int | None = None) -> List[Tuple[int, int]]:
     months: List[Tuple[int, int]] = []
     for y in range(start_year, end_year + 1):
@@ -286,6 +308,7 @@ def _month_iter(start_year: int, end_year: int, start_month: int | None = None, 
 
 def generate_sales(session: snowpark.Session, start_year: int, end_year: int, start_month: int | None = None, end_month: int | None = None) -> None:
     _ensure_context(session)
+    _ensure_target_table(session)
     rng = np.random.default_rng(42)
 
     # Build stock-based daily targets
