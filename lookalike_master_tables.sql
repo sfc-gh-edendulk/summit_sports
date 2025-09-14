@@ -56,7 +56,7 @@ customer_metrics AS (
 ),
 
 -- Sport category affinity scores
-sport_affinity AS (
+sports_behavior AS (
   SELECT 
     CUSTOMER_ID,
     -- Sport-specific spend shares
@@ -95,13 +95,13 @@ enriched AS (
     cm.q1_spend, cm.q2_spend, cm.q3_spend, cm.q4_spend,
     cm.stores_visited, cm.brands_purchased, cm.low_price_preference, cm.premium_preference,
     
-    COALESCE(sa.running_affinity, 0) AS running_affinity,
-    COALESCE(sa.cycling_affinity, 0) AS cycling_affinity,
-    COALESCE(sa.winter_sports_affinity, 0) AS winter_sports_affinity,
-    COALESCE(sa.team_sports_affinity, 0) AS team_sports_affinity,
-    COALESCE(sa.outdoor_affinity, 0) AS outdoor_affinity,
-    COALESCE(sa.sports_breadth, 0) AS sports_breadth,
-    COALESCE(sa.category_breadth, 0) AS category_breadth,
+    COALESCE(sb.running_affinity, 0) AS running_affinity,
+    COALESCE(sb.cycling_affinity, 0) AS cycling_affinity,
+    COALESCE(sb.winter_sports_affinity, 0) AS winter_sports_affinity,
+    COALESCE(sb.team_sports_affinity, 0) AS team_sports_affinity,
+    COALESCE(sb.outdoor_affinity, 0) AS outdoor_affinity,
+    COALESCE(sb.sports_breadth, 0) AS sports_breadth,
+    COALESCE(sb.category_breadth, 0) AS category_breadth,
     
     pp.preferred_payment_method, pp.payment_methods_used,
     
@@ -132,12 +132,12 @@ enriched AS (
     END AS engagement_level,
     
     -- Sports engagement composite score
-    ROUND((COALESCE(sa.running_affinity, 0) + COALESCE(sa.cycling_affinity, 0) + COALESCE(sa.winter_sports_affinity, 0) + 
-           COALESCE(sa.team_sports_affinity, 0) + COALESCE(sa.outdoor_affinity, 0)), 4) AS sports_engagement_score
+    ROUND((COALESCE(sb.running_affinity, 0) + COALESCE(sb.cycling_affinity, 0) + COALESCE(sb.winter_sports_affinity, 0) + 
+           COALESCE(sb.team_sports_affinity, 0) + COALESCE(sb.outdoor_affinity, 0)), 4) AS sports_engagement_score
     
   FROM latest_demo ld
   LEFT JOIN customer_metrics cm USING (CUSTOMER_ID)
-  LEFT JOIN sport_affinity sa USING (CUSTOMER_ID)
+    LEFT JOIN sports_behavior sb USING (CUSTOMER_ID)
   LEFT JOIN payment_prefs pp USING (CUSTOMER_ID)
 )
 
