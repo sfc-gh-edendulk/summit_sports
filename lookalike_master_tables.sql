@@ -1,4 +1,4 @@
--- Master Tables for Lookalike Audience Creation
+-- Master Tables for Lookalike Audience Creation (WITH EMAIL COLUMNS)
 -- Creates feature-rich customer profiles for Summit Sports and Crocevia
 -- to enable lookalike modeling and cross-brand audience targeting
 
@@ -12,7 +12,7 @@ WITH
 latest_demo AS (
   SELECT 
     CUSTOMER_ID,
-    FIRST_NAME, LAST_NAME, GENDER, BIRTH_DATE, 
+    FIRST_NAME, LAST_NAME, GENDER, BIRTH_DATE, EMAIL, PHONE,
     CUSTOMER_POSTCODE AS POSTAL_CODE, LATITUDE, LONGITUDE
   FROM SS_101.HARMONIZED.ORDERS_DT
   WHERE CUSTOMER_ID IS NOT NULL
@@ -86,10 +86,11 @@ payment_prefs AS (
   GROUP BY CUSTOMER_ID
 ),
 
--- Final enrichment
+-- Final enrichment with email and hashed email
 enriched AS (
   SELECT 
     ld.*,
+    SHA2(LOWER(TRIM(ld.EMAIL)), 256) AS HASHED_EMAIL,
     cm.total_spend, cm.total_orders, cm.total_items, cm.avg_basket_size, cm.avg_item_price,
     cm.last_purchase_date, cm.days_since_last_purchase, cm.avg_days_between_orders,
     cm.q1_spend, cm.q2_spend, cm.q3_spend, cm.q4_spend,
@@ -137,14 +138,14 @@ enriched AS (
     
   FROM latest_demo ld
   LEFT JOIN customer_metrics cm USING (CUSTOMER_ID)
-    LEFT JOIN sports_behavior sb USING (CUSTOMER_ID)
+  LEFT JOIN sports_behavior sb USING (CUSTOMER_ID)
   LEFT JOIN payment_prefs pp USING (CUSTOMER_ID)
 )
 
 SELECT * FROM enriched;
 
 -- =============================================================================
--- CROCEVIA MASTER TABLE: Sports-Adjacent Customer Features
+-- CROCEVIA MASTER TABLE: Sports-Adjacent Customer Features  
 -- =============================================================================
 
 CREATE OR REPLACE TABLE CROCEVIA_DB.GOLD_DATA.CROCEVIA_LOOKALIKE_FEATURES AS
@@ -153,7 +154,7 @@ WITH
 latest_demo AS (
   SELECT 
     CUSTOMER_ID,
-    FIRST_NAME, LAST_NAME, GENDER, BIRTH_DATE,
+    FIRST_NAME, LAST_NAME, GENDER, BIRTH_DATE, EMAIL, PHONE,
     CUSTOMER_POSTCODE AS POSTAL_CODE, LATITUDE, LONGITUDE
   FROM CROCEVIA_DB.GOLD_DATA.CC_ORDERS
   WHERE CUSTOMER_ID IS NOT NULL
@@ -178,7 +179,13 @@ customer_metrics AS (
     DATEDIFF(day, MIN(SALE_DATE), MAX(SALE_DATE)) / NULLIF(COUNT(DISTINCT ORDER_ID) - 1, 0) AS avg_days_between_orders,
     
     -- Store diversity
-    COUNT(DISTINCT STORE_ID) AS stores_visited
+    COUNT(DISTINCT STORE_ID) AS stores_visited,
+    
+    -- Seasonality
+    SUM(CASE WHEN QUARTER(SALE_DATE) = 1 THEN SALES_PRICE_EURO ELSE 0 END) AS q1_spend,
+    SUM(CASE WHEN QUARTER(SALE_DATE) = 2 THEN SALES_PRICE_EURO ELSE 0 END) AS q2_spend,
+    SUM(CASE WHEN QUARTER(SALE_DATE) = 3 THEN SALES_PRICE_EURO ELSE 0 END) AS q3_spend,
+    SUM(CASE WHEN QUARTER(SALE_DATE) = 4 THEN SALES_PRICE_EURO ELSE 0 END) AS q4_spend
     
   FROM CROCEVIA_DB.GOLD_DATA.CC_ORDERS
   WHERE CUSTOMER_ID IS NOT NULL
@@ -204,7 +211,7 @@ sports_behavior AS (
     
     -- Sports brand affinity
     SUM(CASE WHEN ILIKE(COALESCE(BRAND, ''), '%nike%') OR ILIKE(COALESCE(BRAND, ''), '%adidas%') OR ILIKE(COALESCE(BRAND, ''), '%decathlon%') 
-             OR ILIKE(COALESCE(BRAND, ''), '%salomon%') OR ILIKE(COALESCE(BRAND, ''), '%columbia%') 
+             OR ILIKE(COALESCE(BRAND, ''), '%salomon%') OR ILIKE(COALESCE(BRAND, ''), '%columbia%') OR ILIKE(COALESCE(BRAND, ''), '%quechua%')
              THEN SALES_PRICE_EURO ELSE 0 END) AS sports_brand_spend,
     
     -- Sports item frequency
@@ -221,7 +228,10 @@ sports_behavior AS (
     
     -- Premium sports purchasing
     AVG(CASE WHEN (ILIKE(COALESCE(PRODUCT_CATEGORY, ''), '%sport%') OR ILIKE(COALESCE(PRODUCT_SUBCATEGORY, ''), '%sport%')) 
-                  AND SALES_PRICE_EURO > 100 THEN 1 ELSE 0 END) AS premium_sports_preference
+                  AND SALES_PRICE_EURO > 100 THEN 1 ELSE 0 END) AS premium_sports_preference,
+    
+    -- Category diversity in sports
+    COUNT(DISTINCT CASE WHEN ILIKE(COALESCE(SPORT, ''), '%') THEN SPORT END) AS sports_category_breadth
     
   FROM SS_101.HARMONIZED.ORDERS_DT
   WHERE CUSTOMER_ID IS NOT NULL
@@ -239,13 +249,15 @@ payment_prefs AS (
   GROUP BY CUSTOMER_ID
 ),
 
--- Final enrichment
+-- Final enrichment with email and hashed email
 enriched AS (
   SELECT 
     ld.*,
+    SHA2(LOWER(TRIM(ld.EMAIL)), 256) AS HASHED_EMAIL,
     cm.total_spend, cm.total_orders, cm.total_items, cm.avg_basket_size, cm.avg_item_price,
     cm.last_purchase_date, cm.days_since_last_purchase, cm.avg_days_between_orders,
     cm.q1_spend, cm.q2_spend, cm.q3_spend, cm.q4_spend,
+    cm.stores_visited, cm.brands_purchased, cm.low_price_preference, cm.premium_preference,
     
     COALESCE(sb.sports_spend, 0) AS sports_spend,
     COALESCE(sb.fitness_spend, 0) AS fitness_spend,
@@ -258,6 +270,7 @@ enriched AS (
     COALESCE(sb.winter_sports_spend, 0) AS winter_sports_spend,
     COALESCE(sb.summer_sports_spend, 0) AS summer_sports_spend,
     COALESCE(sb.premium_sports_preference, 0) AS premium_sports_preference,
+    COALESCE(sb.sports_category_breadth, 0) AS sports_category_breadth,
     
     pp.preferred_payment_method, pp.payment_methods_used,
     
@@ -315,7 +328,7 @@ WITH
 latest_demo AS (
   SELECT 
     CUSTOMER_ID,
-    FIRST_NAME, LAST_NAME, GENDER, BIRTH_DATE,
+    FIRST_NAME, LAST_NAME, GENDER, BIRTH_DATE, EMAIL, PHONE,
     CUSTOMER_POSTCODE AS POSTAL_CODE, LATITUDE, LONGITUDE
   FROM CROCEVIA_DB.GOLD_DATA.CC_ORDERS
   WHERE CUSTOMER_ID IS NOT NULL
@@ -411,10 +424,11 @@ payment_prefs AS (
   GROUP BY CUSTOMER_ID
 ),
 
--- Enriched with calculated features
+-- Enriched with calculated features and email/hashed email
 enriched AS (
   SELECT 
     ld.*,
+    SHA2(LOWER(TRIM(ld.EMAIL)), 256) AS HASHED_EMAIL,
     cm.total_spend, cm.total_orders, cm.total_items, cm.avg_basket_size, cm.avg_item_price,
     cm.last_purchase_date, cm.days_since_last_purchase, cm.avg_days_between_orders,
     cm.stores_visited, cm.q1_spend, cm.q2_spend, cm.q3_spend, cm.q4_spend,
@@ -477,71 +491,3 @@ enriched AS (
 )
 
 SELECT * FROM enriched;
-
--- =============================================================================
--- LOOKALIKE SEED AND TARGET VIEWS
--- =============================================================================
-
--- Summit high-value seed audience
-CREATE OR REPLACE VIEW SS_101.HARMONIZED.SUMMIT_LOOKALIKE_SEED AS
-SELECT *
-FROM SS_101.HARMONIZED.SUMMIT_LOOKALIKE_FEATURES
-WHERE value_tier IN ('VIP', 'High Value')
-  AND engagement_level IN ('Highly Active', 'Active')
-  AND sports_engagement_score > 0.3;
-
--- Crocevia sports-affinity target pool  
-CREATE OR REPLACE VIEW CROCEVIA_DB.GOLD_DATA.CROCEVIA_LOOKALIKE_TARGETS AS
-SELECT *
-FROM CROCEVIA_DB.GOLD_DATA.CROCEVIA_LOOKALIKE_FEATURES
-WHERE sports_affinity_tier IN ('High Sports Affinity', 'Medium Sports Affinity')
-  AND value_tier IN ('VIP', 'High Value', 'Medium Value')
-  AND days_since_last_purchase <= 180;
-
--- =============================================================================
--- LOOKALIKE SCORING EXAMPLE
--- =============================================================================
-
-/*
-Example lookalike audience creation:
-
-WITH summit_seed_profile AS (
-  SELECT 
-    AVG(sports_engagement_score) AS avg_sports_engagement,
-    AVG(total_spend) AS avg_spend,
-    AVG(avg_basket_size) AS avg_basket,
-    AVG(stores_visited) AS avg_stores,
-    MODE(age_band) AS typical_age_band,
-    MODE(gender) AS typical_gender,
-    AVG(premium_sports_preference) AS avg_premium_pref
-  FROM SS_101.HARMONIZED.SUMMIT_LOOKALIKE_SEED
-),
-crocevia_scored AS (
-  SELECT 
-    c.CUSTOMER_ID,
-    c.FIRST_NAME,
-    c.LAST_NAME,
-    c.POSTAL_CODE,
-    c.age_band,
-    c.value_tier,
-    c.sports_engagement_score,
-    c.total_spend,
-    
-    -- Similarity scoring (0-1, higher = more similar to Summit high-value customers)
-    ROUND(
-      (1 - ABS(c.sports_engagement_score - s.avg_sports_engagement)) * 0.35 +
-      (1 - ABS(c.total_spend - s.avg_spend) / GREATEST(c.total_spend, s.avg_spend, 1)) * 0.25 +
-      (1 - ABS(c.avg_basket_size - s.avg_basket) / GREATEST(c.avg_basket_size, s.avg_basket, 1)) * 0.20 +
-      (CASE WHEN c.age_band = s.typical_age_band THEN 1 ELSE 0 END) * 0.10 +
-      (CASE WHEN c.gender = s.typical_gender THEN 1 ELSE 0 END) * 0.10,
-      4
-    ) AS lookalike_score
-    
-  FROM CROCEVIA_DB.GOLD_DATA.CROCEVIA_LOOKALIKE_TARGETS c
-  CROSS JOIN summit_seed_profile s
-)
-SELECT * FROM crocevia_scored
-WHERE lookalike_score >= 0.75
-ORDER BY lookalike_score DESC
-LIMIT 50000;
-*/
