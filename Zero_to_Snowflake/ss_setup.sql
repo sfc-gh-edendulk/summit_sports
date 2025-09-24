@@ -348,3 +348,5 @@ ALTER WAREHOUSE ss_de_wh SET WAREHOUSE_SIZE = 'XSmall';
 
 -- setup completion note
 SELECT 'ss_101 setup is now complete' AS note;
+
+CALL SS_101.SOURCE_DATA.SS_NEW_SALES_GEN_RUN(2025, 2025, 1, 5);
