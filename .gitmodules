@@ -1,0 +1,6 @@
+[submodule "social_listening"]
+	path = social_listening
+	url = https://github.com/sfc-gh-edendulk/summit-sports-social-listening.git
+[submodule "sfguide-terraform-sample"]
+	path = sfguide-terraform-sample
+	url = https://github.com/sfc-gh-edendulk/sfguide-terraform-sample.git
